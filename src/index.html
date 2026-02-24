@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TravelSwipe</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <h1 id="page-title">TravelSwipe</h1>
+  <div class="right">
+    <button id="btn-map" class="btn">🗺️ View Map</button>
+  </div>
+</header>
+
+<section id="city-screen">
+  <h2>Select a city</h2>
+  <div class="city-buttons">
+    <button class="city-btn" data-city="London">London</button>
+    <button class="city-btn" data-city="New York">New York</button>
+    <button class="city-btn" data-city="Tokyo">Tokyo</button>
+    <button class="city-btn" data-city="Istanbul">Istanbul</button>
+    <button class="city-btn" data-city="Oslo">Oslo</button>
+    <button class="city-btn" data-city="Rio">Rio</button>
+  </div>
+  <p class="hint">New York and Tokyo attractions will be added later.</p>
+</section>
+
+<!-- Controls now sits nicely inside the topbar on the right -->
+<div class="container" id="controls-wrap" style="display:none;">
+  <div id="controls"></div>
+</div>
+
+<main id="app" class="container" style="display:none;">
+  <div class="app-grid">
+    <div>
+      <div id="card-container"></div>
+    </div>
+
+    <aside class="itinerary-panel">
+      <h3>My Itinerary</h3>
+      <p class="sub">Swipe right to save places. Use Undo if needed.</p>
+      <ul id="itinerary-list"></ul>
+    </aside>
+  </div>
+</main>
+
+<script src="travel-data.js"></script>
+<script src="main.js"></script>
+</body>

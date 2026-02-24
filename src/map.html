@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TravelSwipe - Map</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+      #map {
+          height: 78vh;
+          margin: 18px;
+          border-radius: 14px;
+          overflow: hidden;
+          border: 1px solid rgba(248,250,252,0.2);
+      }
+      .mapbar{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          padding: 0 18px 12px;
+          gap: 12px;
+          flex-wrap: wrap;
+      }
+      .mapbar .left{
+          display:flex;
+          align-items:center;
+          gap: 10px;
+          flex-wrap: wrap;
+      }
+      .mapbar a, .mapbar button{
+          padding: 10px 14px;
+          border-radius: 10px;
+          border: 1px solid #334155;
+          background: #0b1220;
+          color: #f8fafc;
+          cursor: pointer;
+          text-decoration:none;
+          display:inline-block;
+      }
+      .mapbar a:hover, .mapbar button:hover{
+          background:#1e293b;
+          transform: translateY(-2px);
+      }
+      .meta{
+          opacity:0.85;
+      }
+
+      /* days input */
+      #days-input{
+          width: 84px;
+          padding: 10px 12px;
+          border-radius: 10px;
+          border: 1px solid #334155;
+          background: #0b1220;
+          color: #f8fafc;
+          outline: none;
+      }
+      .label{
+          opacity: 0.85;
+          font-weight: 600;
+      }
+      .day-btn.active{
+          background:#1e293b;
+      }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>Itinerary Map</h1>
+</header>
+
+<div class="mapbar">
+  <div class="left">
+    <a href="index.html">← Back</a>
+    <button id="btn-clear">Clear Itinerary</button>
+    <button id="btn-fit">Fit to Markers</button>
+  </div>
+  <div class="meta" id="meta"></div>
+</div>
+
+<!-- Day selector + days input -->
+<div class="mapbar" style="padding-top:0;">
+  <div class="left" id="daybar"></div>
+  <div class="left">
+    <span class="label">Days</span>
+    <input id="days-input" type="number" min="1" max="14" />
+    <button id="btn-apply-days">Apply</button>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<script src="travel-data.js"></script>
+<script>
+  // ----- Load saved data -----
+  const liked = JSON.parse(localStorage.getItem("likedAttractions") || "[]");
+  const selectedCity = localStorage.getItem("selectedCity") || "London";
+
+  const metaEl = document.getElementById("meta");
+  metaEl.textContent = `${selectedCity} • ${liked.length} saved place(s)`;
+
+  const fallbackCenter = {
+    London: [51.5074, -0.1278],
+    "New York": [40.7128, -74.0060],
+    Tokyo: [35.6762, 139.6503],
+    Istanbul: [41.0082, 28.9784],
+    Oslo: [59.9139, 10.7522],
+    Rio: [-22.9068, -43.1729]
+  };
+
+  const center = fallbackCenter[selectedCity] || [51.5074, -0.1278];
+  const map = L.map("map").setView(center, 12);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+
+  // Only keep points with coordinates
+  const points = liked
+    .filter(p => typeof p.lat === "number" && typeof p.lng === "number")
+    .map(p => ({ ...p, lat: Number(p.lat), lng: Number(p.lng) }));
+
+  // Guard: no points
+  if (points.length === 0) {
+    alert("No saved places with coordinates yet. Like some attractions first.");
+  }
+
+  // ----- Days / Plan state -----
+  let tripDays = Number(localStorage.getItem("tripDays") || "1");
+  if (!Number.isFinite(tripDays) || tripDays < 1) tripDays = 1;
+  tripDays = Math.min(14, tripDays);
+
+  const daysInput = document.getElementById("days-input");
+  daysInput.value = String(tripDays);
+
+  let activeDay = 1;
+  let dayPlan = [];
+  let markersLayer = L.layerGroup().addTo(map);
+  let routeLine = null;
+
+  // ----- Helpers -----
+  function euclid(a, b){
+    const dx = a.lng - b.lng;
+    const dy = a.lat - b.lat;
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+
+  function clusterByCloseness(pts, k) {
+    if (!pts || pts.length === 0) return [];
+    k = Math.max(1, Math.min(k, pts.length));
+
+    // Start: each point is its own cluster
+    let clusters = pts.map(p => ({ places: [p] }));
+
+    // Distance between two clusters = distance between their centroids
+    function centroid(c) {
+      const n = c.places.length;
+      const lat = c.places.reduce((s,p)=>s+p.lat,0) / n;
+      const lng = c.places.reduce((s,p)=>s+p.lng,0) / n;
+      return { lat, lng };
+    }
+
+    function clusterDist(a, b) {
+      const ca = centroid(a), cb = centroid(b);
+      return euclid(ca, cb);
+    }
+
+    // Merge closest clusters until we have k clusters
+    while (clusters.length > k) {
+      let bestI = 0, bestJ = 1, bestD = Infinity;
+
+      for (let i = 0; i < clusters.length; i++) {
+        for (let j = i + 1; j < clusters.length; j++) {
+          const d = clusterDist(clusters[i], clusters[j]);
+          if (d < bestD) {
+            bestD = d;
+            bestI = i;
+            bestJ = j;
+          }
+        }
+      }
+
+      // merge J into I
+      clusters[bestI].places = clusters[bestI].places.concat(clusters[bestJ].places);
+      clusters.splice(bestJ, 1);
+    }
+
+    // Order clusters north -> south (like your example)
+    const ordered = clusters
+      .map(c => {
+        const ctd = centroid(c);
+        return { places: c.places, centroid: ctd };
+      })
+      .sort((a,b) => b.centroid.lat - a.centroid.lat);
+
+    return ordered.map((c, idx) => ({
+      day: idx + 1,
+      centroid: c.centroid,
+      places: c.places
+    }));
+  }
+
+  function nearestNeighborOrder(list){
+    if (!list || list.length <= 2) return (list || []).slice();
+
+    const remaining = list.slice();
+    const ordered = [];
+
+    // start from most northern point (matches your "north then south" idea)
+    remaining.sort((a,b)=> b.lat - a.lat);
+    ordered.push(remaining.shift());
+
+    while (remaining.length){
+      const last = ordered[ordered.length - 1];
+      let bestIdx = 0;
+      let bestD = Infinity;
+
+      for (let i = 0; i < remaining.length; i++){
+        const d = euclid(last, remaining[i]);
+        if (d < bestD){ bestD = d; bestIdx = i; }
+      }
+      ordered.push(remaining.splice(bestIdx, 1)[0]);
+    }
+    return ordered;
+  }
+
+  function clearMap(){
+    markersLayer.clearLayers();
+    if (routeLine) map.removeLayer(routeLine);
+    routeLine = null;
+  }
+
+  function fitToList(list){
+    if (!list || list.length === 0) return;
+    const b = list.map(p => [p.lat, p.lng]);
+    map.fitBounds(L.latLngBounds(b), { padding: [40, 40] });
+  }
+
+  async function drawRouteForList(list){
+    if (!list || list.length < 2) return;
+
+    const ordered = nearestNeighborOrder(list);
+    const coords = ordered.map(p => `${p.lng},${p.lat}`).join(";");
+    const url = `https://router.project-osrm.org/route/v1/walking/${coords}?overview=full&geometries=geojson`;
+
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.routes || !data.routes[0] || !data.routes[0].geometry) return;
+
+      if (routeLine) map.removeLayer(routeLine);
+
+      routeLine = L.geoJSON(data.routes[0].geometry, {
+        style: { weight: 5, opacity: 0.85 }
+      }).addTo(map);
+
+      const dMeters = data.routes[0].distance;
+
+      // ✅ FIX: compute time ourselves using realistic walking speed
+      // 5 km/h ≈ 1.3889 m/s
+      const walkingSpeedMps = 1.3889;
+      const mins = Math.round((dMeters / walkingSpeedMps) / 60);
+
+      const km = (dMeters / 1000).toFixed(2);
+
+      metaEl.textContent = `${selectedCity} • ${liked.length} saved • Day ${activeDay}: ${km} km (~${mins} min walk)`;
+    } catch (e) {
+      // route optional
+    }
+  }
+
+  function drawDay(dayNumber){
+    clearMap();
+
+    const dayObj = dayPlan.find(d => d.day === dayNumber);
+    if (!dayObj || dayObj.places.length === 0){
+      metaEl.textContent = `${selectedCity} • ${liked.length} saved • Day ${dayNumber}: no places`;
+      return;
+    }
+
+    dayObj.places.forEach((p, i) => {
+      const marker = L.marker([p.lat, p.lng]).addTo(markersLayer);
+
+      const safeId = encodeURIComponent(p.id);
+
+      marker.bindPopup(`
+        <b>${i + 1}. ${p.name}</b><br>
+        ${p.category || ""}<br>
+        ${p.description || ""}<br><br>
+        <a href="index.html" class="open-in-app" data-id="${safeId}">Open in app</a>
+      `);
+
+      marker.on("popupopen", () => {
+        const link = document.querySelector('.open-in-app[data-id="' + safeId + '"]');
+        if (!link) return;
+
+        link.addEventListener("click", () => {
+          localStorage.setItem("jumpToAttractionId", String(p.id));
+          localStorage.setItem("selectedCity", selectedCity);
+        });
+      });
+    });
+
+    fitToList(dayObj.places);
+    drawRouteForList(dayObj.places);
+  }
+
+  function renderDayBar(){
+    const daybar = document.getElementById("daybar");
+    daybar.innerHTML = "";
+
+    dayPlan.forEach((d) => {
+      const btn = document.createElement("button");
+      btn.className = "day-btn" + (d.day === activeDay ? " active" : "");
+      btn.textContent = `Day ${d.day} (${d.places.length})`;
+
+      btn.onclick = () => {
+        activeDay = d.day;
+        renderDayBar();
+        drawDay(activeDay);
+      };
+
+      daybar.appendChild(btn);
+    });
+
+    // If no plan (no points)
+    if (dayPlan.length === 0) {
+      const span = document.createElement("span");
+      span.style.opacity = "0.8";
+      span.textContent = "No places to plan yet.";
+      daybar.appendChild(span);
+    }
+  }
+
+  function rebuildPlan(){
+    dayPlan = clusterByCloseness(points, tripDays);
+    activeDay = 1;
+    renderDayBar();
+    if (dayPlan.length > 0) drawDay(activeDay);
+  }
+
+  // ----- Buttons -----
+  document.getElementById("btn-fit").onclick = () => {
+    const dayObj = dayPlan.find(d => d.day === activeDay);
+    if (dayObj) fitToList(dayObj.places);
+  };
+
+  document.getElementById("btn-clear").onclick = () => {
+    localStorage.setItem("likedAttractions", "[]");
+    window.location.reload();
+  };
+
+  document.getElementById("btn-apply-days").onclick = () => {
+    const v = Math.max(1, Math.min(14, Number(daysInput.value || 1)));
+    tripDays = v;
+    localStorage.setItem("tripDays", String(v));
+    rebuildPlan();
+  };
+
+  // ----- Init -----
+  rebuildPlan();
+</script>
+
+</body>
+</html>
