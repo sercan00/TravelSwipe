@@ -48,7 +48,6 @@
           opacity:0.85;
       }
 
-      /* days input */
       #days-input{
           width: 84px;
           padding: 10px 12px;
@@ -65,6 +64,15 @@
       .day-btn.active{
           background:#1e293b;
       }
+      #travel-mode {
+          padding: 10px 12px;
+          border-radius: 10px;
+          border: 1px solid #334155;
+          background: #0b1220;
+          color: #f8fafc;
+          outline: none;
+          cursor: pointer;
+      }
   </style>
 </head>
 <body>
@@ -78,15 +86,21 @@
     <a href="index.html">← Back</a>
     <button id="btn-clear">Clear Itinerary</button>
     <button id="btn-fit">Fit to Markers</button>
+    <button id="btn-set-start">Set Start</button>
+    <button id="btn-clear-start">Clear Start</button>
   </div>
   <div class="meta" id="meta"></div>
 </div>
 
-<!-- Day selector + days input -->
 <div class="mapbar" style="padding-top:0;">
   <div class="left" id="daybar"></div>
   <div class="left">
-    <span class="label">Days</span>
+    <span class="label">Mode</span>
+    <select id="travel-mode">
+      <option value="walking">🚶 Walking</option>
+      <option value="driving">🚗 Driving</option>
+    </select>
+    <span class="label" style="margin-left:12px;">Days</span>
     <input id="days-input" type="number" min="1" max="14" />
     <button id="btn-apply-days">Apply</button>
   </div>
@@ -94,14 +108,43 @@
 
 <div id="map"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
 <script src="travel-data.js"></script>
-<script>
-  // ----- Load saved data -----
-  const liked = JSON.parse(localStorage.getItem("likedAttractions") || "[]");
-  const selectedCity = localStorage.getItem("selectedCity") || "London";
 
+<script>
+  // ----- Load saved data safely -----
+  const selectedCity = localStorage.getItem("selectedCity") || "London";
   const metaEl = document.getElementById("meta");
-  metaEl.textContent = `${selectedCity} • ${liked.length} saved place(s)`;
+
+  function readLikedAttractions() {
+    try {
+      return JSON.parse(localStorage.getItem("likedAttractions") || "[]");
+    } catch {
+      return [];
+    }
+  }
+
+  let liked = [];
+  let points = [];
+
+  function refreshStoredPoints() {
+    liked = readLikedAttractions();
+
+    points = liked
+      .filter(p => p && p.lat !== undefined && p.lng !== undefined)
+      .map(p => ({
+        ...p,
+        lat: Number(p.lat),
+        lng: Number(p.lng)
+      }))
+      .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+
+    metaEl.textContent = `${selectedCity} • ${liked.length} saved place(s)`;
+  }
+
+  refreshStoredPoints();
 
   const fallbackCenter = {
     London: [51.5074, -0.1278],
@@ -120,16 +163,6 @@
     attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
 
-  // Only keep points with coordinates
-  const points = liked
-    .filter(p => typeof p.lat === "number" && typeof p.lng === "number")
-    .map(p => ({ ...p, lat: Number(p.lat), lng: Number(p.lng) }));
-
-  // Guard: no points
-  if (points.length === 0) {
-    alert("No saved places with coordinates yet. Like some attractions first.");
-  }
-
   // ----- Days / Plan state -----
   let tripDays = Number(localStorage.getItem("tripDays") || "1");
   if (!Number.isFinite(tripDays) || tripDays < 1) tripDays = 1;
@@ -142,6 +175,9 @@
   let dayPlan = [];
   let markersLayer = L.layerGroup().addTo(map);
   let routeLine = null;
+  let startMarker = null;
+  let isPlacingStart = false;
+  const startKey = `startPoint:${selectedCity}`;
 
   // ----- Helpers -----
   function euclid(a, b){
@@ -150,14 +186,54 @@
     return Math.sqrt(dx*dx + dy*dy);
   }
 
+  function loadStartPoint() {
+    try {
+      const raw = localStorage.getItem(startKey);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (typeof obj.lat !== "number" || typeof obj.lng !== "number") return null;
+      return { lat: obj.lat, lng: obj.lng };
+    } catch {
+      return null;
+    }
+  }
+
+  function saveStartPoint(latlng) {
+    localStorage.setItem(startKey, JSON.stringify({ lat: latlng.lat, lng: latlng.lng }));
+  }
+
+  function clearStartPoint() {
+    localStorage.removeItem(startKey);
+    if (startMarker) {
+      map.removeLayer(startMarker);
+      startMarker = null;
+    }
+  }
+
+  function setStartMarker(latlng) {
+    if (!startMarker) {
+      startMarker = L.marker([latlng.lat, latlng.lng], { draggable: true }).addTo(map);
+      startMarker.bindPopup("<b>Start point</b><br>Drag to adjust.").openPopup();
+
+      startMarker.on("dragend", () => {
+        const p = startMarker.getLatLng();
+        saveStartPoint(p);
+        drawDay(activeDay);
+      });
+    } else {
+      startMarker.setLatLng([latlng.lat, latlng.lng]);
+    }
+
+    saveStartPoint(latlng);
+  }
+
+  // ----- Day clustering -----
   function clusterByCloseness(pts, k) {
     if (!pts || pts.length === 0) return [];
     k = Math.max(1, Math.min(k, pts.length));
 
-    // Start: each point is its own cluster
     let clusters = pts.map(p => ({ places: [p] }));
 
-    // Distance between two clusters = distance between their centroids
     function centroid(c) {
       const n = c.places.length;
       const lat = c.places.reduce((s,p)=>s+p.lat,0) / n;
@@ -170,7 +246,6 @@
       return euclid(ca, cb);
     }
 
-    // Merge closest clusters until we have k clusters
     while (clusters.length > k) {
       let bestI = 0, bestJ = 1, bestD = Infinity;
 
@@ -185,12 +260,10 @@
         }
       }
 
-      // merge J into I
       clusters[bestI].places = clusters[bestI].places.concat(clusters[bestJ].places);
       clusters.splice(bestJ, 1);
     }
 
-    // Order clusters north -> south (like your example)
     const ordered = clusters
       .map(c => {
         const ctd = centroid(c);
@@ -205,15 +278,35 @@
     }));
   }
 
+  // ----- Routing -----
+  function centroidOf(list){
+    const n = list.length || 1;
+    const lat = list.reduce((s,p)=>s+p.lat,0) / n;
+    const lng = list.reduce((s,p)=>s+p.lng,0) / n;
+    return { lat, lng };
+  }
+
+  function pickStartClosestToCentroid(list){
+    if (!list || list.length === 0) return null;
+    const c = centroidOf(list);
+    let best = list[0];
+    let bestD = Infinity;
+    for (const p of list){
+      const d = euclid(p, c);
+      if (d < bestD){ bestD = d; best = p; }
+    }
+    return best;
+  }
+
   function nearestNeighborOrder(list){
     if (!list || list.length <= 2) return (list || []).slice();
 
     const remaining = list.slice();
     const ordered = [];
 
-    // start from most northern point (matches your "north then south" idea)
-    remaining.sort((a,b)=> b.lat - a.lat);
-    ordered.push(remaining.shift());
+    const start = pickStartClosestToCentroid(remaining);
+    ordered.push(start);
+    remaining.splice(remaining.findIndex(p => p.id === start.id), 1);
 
     while (remaining.length){
       const last = ordered[ordered.length - 1];
@@ -229,6 +322,109 @@
     return ordered;
   }
 
+  function routeLength(list){
+    let sum = 0;
+    for (let i = 0; i < list.length - 1; i++){
+      sum += euclid(list[i], list[i+1]);
+    }
+    return sum;
+  }
+
+  function twoOptImprove(route, maxPasses = 8){
+    const r = route.slice();
+    if (r.length < 4) return r;
+
+    let improved = true;
+    let passes = 0;
+
+    while (improved && passes < maxPasses){
+      improved = false;
+      passes++;
+
+      for (let i = 1; i < r.length - 2; i++){
+        for (let k = i + 1; k < r.length - 1; k++){
+          const a = r[i - 1], b = r[i];
+          const c = r[k], d = r[k + 1];
+
+          const current = euclid(a,b) + euclid(c,d);
+          const swapped = euclid(a,c) + euclid(b,d);
+
+          if (swapped < current){
+            const segment = r.slice(i, k + 1).reverse();
+            r.splice(i, segment.length, ...segment);
+            improved = true;
+          }
+        }
+      }
+    }
+
+    return r;
+  }
+
+  function getOptimizedVisitOrder(list){
+    const nn = nearestNeighborOrder(list);
+    const improved = twoOptImprove(nn);
+    return routeLength(improved) <= routeLength(nn) ? improved : nn;
+  }
+
+  function getOptimizedVisitOrderFromStart(list, startLatLng) {
+    if (!startLatLng) return getOptimizedVisitOrder(list);
+
+    const startPoint = { id: "__start__", lat: startLatLng.lat, lng: startLatLng.lng };
+
+    const nn = (function nearestNeighborFromStart() {
+      if (!list || list.length === 0) return [startPoint];
+
+      const remaining = list.slice();
+      const ordered = [startPoint];
+
+      while (remaining.length) {
+        const last = ordered[ordered.length - 1];
+        let bestIdx = 0;
+        let bestD = Infinity;
+
+        for (let i = 0; i < remaining.length; i++) {
+          const d = euclid(last, remaining[i]);
+          if (d < bestD) { bestD = d; bestIdx = i; }
+        }
+        ordered.push(remaining.splice(bestIdx, 1)[0]);
+      }
+      return ordered;
+    })();
+
+    const improved = (function twoOptFixedStart(route, maxPasses = 8) {
+      const r = route.slice();
+      if (r.length < 5) return r;
+
+      let improved = true;
+      let passes = 0;
+
+      while (improved && passes < maxPasses) {
+        improved = false;
+        passes++;
+
+        for (let i = 2; i < r.length - 2; i++) {
+          for (let k = i + 1; k < r.length - 1; k++) {
+            const a = r[i - 1], b = r[i];
+            const c = r[k], d = r[k + 1];
+
+            const current = euclid(a, b) + euclid(c, d);
+            const swapped = euclid(a, c) + euclid(b, d);
+
+            if (swapped < current) {
+              const segment = r.slice(i, k + 1).reverse();
+              r.splice(i, segment.length, ...segment);
+              improved = true;
+            }
+          }
+        }
+      }
+      return r;
+    })(nn);
+
+    return improved;
+  }
+
   function clearMap(){
     markersLayer.clearLayers();
     if (routeLine) map.removeLayer(routeLine);
@@ -237,17 +433,24 @@
 
   function fitToList(list){
     if (!list || list.length === 0) return;
+
     const b = list.map(p => [p.lat, p.lng]);
+
+    const start = loadStartPoint();
+    if (start) b.push([start.lat, start.lng]);
+
     map.fitBounds(L.latLngBounds(b), { padding: [40, 40] });
   }
 
   async function drawRouteForList(list){
     if (!list || list.length < 2) return;
 
-    const ordered = nearestNeighborOrder(list);
-    const coords = ordered.map(p => `${p.lng},${p.lat}`).join(";");
-    const url = `https://router.project-osrm.org/route/v1/walking/${coords}?overview=full&geometries=geojson`;
+    const start = loadStartPoint();
+    const ordered = getOptimizedVisitOrderFromStart(list, start);
 
+    const coords = ordered.map(p => `${p.lng},${p.lat}`).join(";");
+    const mode = document.getElementById("travel-mode").value || "walking";
+    const url = `https://router.project-osrm.org/route/v1/${mode}/${coords}?overview=full&geometries=geojson`;
     try {
       const res = await fetch(url);
       const data = await res.json();
@@ -260,17 +463,15 @@
       }).addTo(map);
 
       const dMeters = data.routes[0].distance;
-
-      // ✅ FIX: compute time ourselves using realistic walking speed
-      // 5 km/h ≈ 1.3889 m/s
-      const walkingSpeedMps = 1.3889;
-      const mins = Math.round((dMeters / walkingSpeedMps) / 60);
-
+      const mode2 = document.getElementById("travel-mode").value || "walking";
+      const speedMps = mode2 === "driving" ? 8.33 : 1.3889;
+      const mins = Math.round((dMeters / speedMps) / 60);
       const km = (dMeters / 1000).toFixed(2);
+      const modeLabel = mode2 === "driving" ? "drive" : "walk";
 
-      metaEl.textContent = `${selectedCity} • ${liked.length} saved • Day ${activeDay}: ${km} km (~${mins} min walk)`;
+      metaEl.textContent = `${selectedCity} • ${liked.length} saved • Day ${activeDay}: ${km} km (~${mins} min ${modeLabel})`;
     } catch (e) {
-      // route optional
+      console.error("Route error:", e);
     }
   }
 
@@ -285,7 +486,6 @@
 
     dayObj.places.forEach((p, i) => {
       const marker = L.marker([p.lat, p.lng]).addTo(markersLayer);
-
       const safeId = encodeURIComponent(p.id);
 
       marker.bindPopup(`
@@ -328,7 +528,6 @@
       daybar.appendChild(btn);
     });
 
-    // If no plan (no points)
     if (dayPlan.length === 0) {
       const span = document.createElement("span");
       span.style.opacity = "0.8";
@@ -338,10 +537,16 @@
   }
 
   function rebuildPlan(){
+    refreshStoredPoints();
     dayPlan = clusterByCloseness(points, tripDays);
     activeDay = 1;
     renderDayBar();
-    if (dayPlan.length > 0) drawDay(activeDay);
+
+    if (dayPlan.length > 0) {
+      drawDay(activeDay);
+    } else {
+      metaEl.textContent = `${selectedCity} • ${liked.length} saved place(s)`;
+    }
   }
 
   // ----- Buttons -----
@@ -352,6 +557,9 @@
 
   document.getElementById("btn-clear").onclick = () => {
     localStorage.setItem("likedAttractions", "[]");
+    if (window.TravelSwipeDB) {
+      window.TravelSwipeDB.saveCurrentSession();
+    }
     window.location.reload();
   };
 
@@ -360,10 +568,49 @@
     tripDays = v;
     localStorage.setItem("tripDays", String(v));
     rebuildPlan();
+
+    if (window.TravelSwipeDB) {
+      window.TravelSwipeDB.saveCurrentSession();
+    }
   };
+
+  // Travel mode toggle
+  const travelModeSelect = document.getElementById("travel-mode");
+  const savedMode = localStorage.getItem("travelMode") || "walking";
+  travelModeSelect.value = savedMode;
+
+  travelModeSelect.addEventListener("change", () => {
+    localStorage.setItem("travelMode", travelModeSelect.value);
+    if (window.TravelSwipeDB) window.TravelSwipeDB.saveCurrentSession();
+    drawDay(activeDay);
+  });
 
   // ----- Init -----
   rebuildPlan();
+
+  if (points.length === 0) {
+    alert("No saved places with coordinates yet. Like some attractions first.");
+  }
+
+  const savedStart = loadStartPoint();
+  if (savedStart) setStartMarker(savedStart);
+
+  document.getElementById("btn-set-start").onclick = () => {
+    isPlacingStart = !isPlacingStart;
+    alert(isPlacingStart ? "Click on the map to set the start point." : "Start point placement cancelled.");
+  };
+
+  document.getElementById("btn-clear-start").onclick = () => {
+    clearStartPoint();
+    drawDay(activeDay);
+  };
+
+  map.on("click", (e) => {
+    if (!isPlacingStart) return;
+    setStartMarker(e.latlng);
+    isPlacingStart = false;
+    drawDay(activeDay);
+  });
 </script>
 
 </body>

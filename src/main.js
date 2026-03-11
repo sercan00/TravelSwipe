@@ -99,16 +99,16 @@ async function loadCard() {
 }
 function startCity(cityName) {
   selectedCity = cityName;
-
   attractions = cityData[cityName] || [];
   selectedCategory = "All";
 
+  // reset current session for this city
   likedAttractions = [];
   swipeHistory = [];
   currentIndex = 0;
 
   localStorage.setItem("selectedCity", cityName);
-  localStorage.setItem("likedAttractions", "[]");
+  localStorage.setItem("likedAttractions", JSON.stringify([]));
 
   const pageTitle = document.getElementById("page-title");
   if (pageTitle) pageTitle.textContent = `TravelSwipe: Explore ${cityName}`;
@@ -120,11 +120,11 @@ function startCity(cityName) {
   renderFilterUI();
   applyFilter();
   jumpToAttractionIfRequested();
-  loadCard();
   updateItineraryDisplay();
 
-  localStorage.setItem("selectedCity", cityName);
-  localStorage.setItem("likedAttractions", "[]");
+  if (window.TravelSwipeDB) {
+    window.TravelSwipeDB.saveCurrentSession();
+  }
 }
 function goBackToCitySelection() {
   // reset state
@@ -201,7 +201,12 @@ function handleSwipe(direction) {
   swipeHistory.push({ place, direction });
 
   if (direction === "right") {
-    likedAttractions.push(place);
+    // prevent duplicates
+    const alreadyLiked = likedAttractions.some((p) => p.id === place.id);
+    if (!alreadyLiked) {
+      likedAttractions.push(place);
+    }
+
     saveItinerary();
     updateItineraryDisplay();
   }
@@ -220,12 +225,30 @@ function updateItineraryDisplay() {
     const name = document.createElement("span");
     name.textContent = place.name;
 
+    const rightSide = document.createElement("span");
+    rightSide.style.display = "flex";
+    rightSide.style.alignItems = "center";
+    rightSide.style.gap = "8px";
+
     const badge = document.createElement("span");
     badge.className = "badge";
     badge.textContent = place.category || "Place";
 
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "remove-btn";
+    removeBtn.textContent = "✕";
+    removeBtn.title = "Remove from itinerary";
+    removeBtn.onclick = () => {
+      likedAttractions = likedAttractions.filter((p) => p.id !== place.id);
+      saveItinerary();
+      updateItineraryDisplay();
+    };
+
+    rightSide.appendChild(badge);
+    rightSide.appendChild(removeBtn);
+
     li.appendChild(name);
-    li.appendChild(badge);
+    li.appendChild(rightSide);
     list.appendChild(li);
   });
 }
@@ -306,6 +329,10 @@ function undoLastSwipe() {
 function saveItinerary() {
   localStorage.setItem("selectedCity", selectedCity ?? "");
   localStorage.setItem("likedAttractions", JSON.stringify(likedAttractions));
+
+  if (window.TravelSwipeDB) {
+    window.TravelSwipeDB.saveCurrentSession();
+  }
 }
 
 function loadItinerary() {
@@ -365,16 +392,6 @@ function confirmDaysAndStart(){
   if (pendingCity) startCity(pendingCity);
   closeDaysModal();
 }
-document.addEventListener("DOMContentLoaded", () => {
-  renderCityButtons();
-
-  const mapBtn = document.getElementById("btn-map");
-  if (mapBtn) {
-    mapBtn.addEventListener("click", () => {
-      window.location.href = "map.html";
-    });
-  }
-});
 // --- Boot (do this ONCE, keep at bottom of file) ---
 document.addEventListener("DOMContentLoaded", () => {
   console.log("[TravelSwipe] boot ✅");
@@ -394,7 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("[TravelSwipe] city:", city);
 
     try {
-      startCity(city);
+      openDaysModal(city);
     } catch (err) {
       console.error(err);
       alert("Error starting city. Check Console for details.");
@@ -405,3 +422,178 @@ if (title) {
   title.style.cursor = "pointer";
   title.addEventListener("click", goBackToCitySelection);
 }
+
+// --- Chat Assistant (pre-programmed FAQ) ---
+function initChatAssistant(){
+  const fab = document.getElementById("chat-fab");
+  const panel = document.getElementById("chat-panel");
+  const closeBtn = document.getElementById("chat-close");
+  const messagesEl = document.getElementById("chat-messages");
+  const inputEl = document.getElementById("chat-text");
+  const sendBtn = document.getElementById("chat-send");
+  const suggEl = document.getElementById("chat-suggestions");
+  const helpBtn = document.getElementById("chat-help");
+  if (helpBtn){
+    helpBtn.onclick = () => {
+      // toggle suggestions visibility
+      suggEl.style.display = (suggEl.style.display === "none") ? "flex" : "none";
+    };
+  }
+
+  if (!fab || !panel || !messagesEl || !inputEl || !sendBtn || !suggEl || !closeBtn) return;
+
+  const QA = [
+    {
+      q: "How do I swipe?",
+      keywords: ["swipe", "like", "dislike", "left", "right"],
+      a: "Swipe right to like a place and add it to your itinerary. Swipe left to skip. You can also use Undo if you make a mistake."
+    },
+    {
+      q: "How do I change city?",
+      keywords: ["city", "change city", "switch city", "back"],
+      a: "Click the page title (TravelSwipe: Explore …) to go back to the city selection screen, then choose another city."
+    },
+    {
+      q: "How does the category filter work?",
+      keywords: ["filter", "category", "museum", "park"],
+      a: "Use the Category dropdown in the top-right. It will show only places from that category. Choosing 'All' shows everything."
+    },
+    {
+      q: "How do I plan multiple days?",
+      keywords: ["days", "plan", "multiple days", "day 1", "day 2"],
+      a: "Open the map, set the number of days, then click Apply. The app groups nearby places into the same day so you don’t travel back and forth."
+    },
+    {
+      q: "What does 'Set Start' do on the map?",
+      keywords: ["start", "set start", "hotel", "starting point"],
+      a: "Set Start lets you pin where you begin (e.g., hotel). The route is then planned starting from that point."
+    },
+    {
+      q: "Walking vs Car mode?",
+      keywords: ["car", "driving", "walking", "mode"],
+      a: "Mode changes the route type. Walking uses walking paths. Car uses driving roads and the travel time estimate updates accordingly."
+    },
+    {
+      q: "Why is the route order like this?",
+      keywords: ["order", "route order", "algorithm", "optimize"],
+      a: "The app orders stops using a nearest-neighbour route and improves it with a 2-opt step to reduce unnecessary backtracking."
+    },
+    {
+      q: "My map shows no route",
+      keywords: ["no route", "not showing", "error", "route missing"],
+      a: "If there are fewer than 2 places in a day, a route won’t appear. Also check your internet connection since routing uses an online service."
+    }
+  ];
+
+  const DEFAULT_SUGGESTIONS = [
+    "How do I swipe?",
+    "How do I plan multiple days?",
+    "What does 'Set Start' do on the map?",
+    "Walking vs Car mode?"
+  ];
+
+  function addBubble(text, who){
+    const div = document.createElement("div");
+    div.className = `chat-bubble ${who}`;
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function bestAnswer(userText){
+    const t = (userText || "").toLowerCase();
+    const liked = JSON.parse(localStorage.getItem("likedAttractions") || "[]");
+    const city = localStorage.getItem("selectedCity") || "this city";
+
+    if (t.includes("saved") || t.includes("how many") || t.includes("places")) {
+      return `You currently have ${liked.length} saved places in ${city}. Open the map to generate your itinerary.`;
+    }
+    // exact match on displayed questions
+    const exact = QA.find(x => x.q.toLowerCase() === t);
+    if (exact) return exact.a;
+
+    // keyword scoring
+    let best = null;
+    let bestScore = 0;
+
+    for (const item of QA){
+      let score = 0;
+      for (const kw of item.keywords){
+        if (t.includes(kw)) score++;
+      }
+      if (score > bestScore){
+        bestScore = score;
+        best = item;
+      }
+    }
+
+    if (best && bestScore >= 1) return best.a;
+
+    return "I can help with swiping, filters, map days, start point, and walking/car mode. Try one of the suggested questions below.";
+  }
+
+  function renderSuggestions(){
+    suggEl.innerHTML = "";
+    DEFAULT_SUGGESTIONS.forEach((label) => {
+      const b = document.createElement("button");
+      b.className = "chat-chip";
+      b.textContent = label;
+      b.onclick = () => {
+        addBubble(label, "user");
+        addBubble(bestAnswer(label), "bot");
+
+        // hide suggestions after first use so chat stays readable
+        suggEl.style.display = "none";
+      };
+      suggEl.appendChild(b);
+    });
+  }
+
+  function openChat(){
+    panel.style.display = "flex";
+    renderSuggestions();
+    if (messagesEl.childElementCount === 0){
+      addBubble("Hi! I’m the TravelSwipe Assistant. Ask me how to use the app.", "bot");
+    }
+    inputEl.focus();
+  }
+
+  function closeChat(){
+    panel.style.display = "none";
+  }
+
+  function send(){
+    const text = inputEl.value.trim();
+    if (!text) return;
+    inputEl.value = "";
+    addBubble(text, "user");
+    addBubble(bestAnswer(text), "bot");
+  }
+
+  fab.addEventListener("click", () => {
+    if (panel.style.display === "none" || !panel.style.display) openChat();
+    else closeChat();
+  });
+
+  closeBtn.addEventListener("click", closeChat);
+
+  sendBtn.addEventListener("click", send);
+
+  inputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") send();
+    if (e.key === "Escape") closeChat();
+  });
+}
+window.onload = async () => {
+  if (window.TravelSwipeDB) {
+    await window.TravelSwipeDB.restoreSessionToLocalStorage();
+  }
+
+  renderCityButtons();
+  initChatAssistant();
+
+  const mapBtn = document.getElementById("btn-map");
+  if (mapBtn) {
+    mapBtn.onclick = () => (window.location.href = "map.html");
+  }
+};

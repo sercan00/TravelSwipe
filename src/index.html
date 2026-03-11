@@ -21,10 +21,7 @@
     <button class="city-btn" data-city="New York">New York</button>
     <button class="city-btn" data-city="Tokyo">Tokyo</button>
     <button class="city-btn" data-city="Istanbul">Istanbul</button>
-    <button class="city-btn" data-city="Oslo">Oslo</button>
-    <button class="city-btn" data-city="Rio">Rio</button>
   </div>
-  <p class="hint">New York and Tokyo attractions will be added later.</p>
 </section>
 
 <!-- Controls now sits nicely inside the topbar on the right -->
@@ -45,7 +42,45 @@
     </aside>
   </div>
 </main>
+<!-- Chat Assistant -->
+<button id="chat-fab" aria-label="Open chat assistant" title="Help">
+  💬
+</button>
 
+<section id="chat-panel" class="chat-panel" aria-label="Chat assistant" style="display:none;">
+  <div class="chat-header">
+    <div>
+      <strong>TravelSwipe Assistant</strong><br />
+      <span class="chat-subtitle">Quick help & tips</span>
+      <button id="chat-help" class="chat-help">Suggested questions</button>
+    </div>
+    <button id="chat-close" class="chat-close" aria-label="Close">✕</button>
+  </div>
+
+  <div id="chat-messages" class="chat-messages"></div>
+
+  <div class="chat-suggestions" id="chat-suggestions"></div>
+
+  <div class="chat-input">
+    <input id="chat-text" type="text" placeholder="Ask something…" />
+    <button id="chat-send">Send</button>
+  </div>
+</section>
+<!-- Days Modal -->
+<div id="days-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; display:none; align-items:center; justify-content:center;">
+  <div style="background:#0f172a; border:1px solid rgba(248,250,252,0.2); border-radius:16px; padding:28px; text-align:center; min-width:280px;">
+    <h3 style="margin:0 0 14px;">How many days is your trip?</h3>
+    <input id="tripDays" type="number" min="1" max="14" value="1"
+           style="width:80px; padding:10px; border-radius:10px; border:1px solid #334155; background:#0b1220; color:#f8fafc; text-align:center; font-size:1.1rem; outline:none;" />
+    <div style="margin-top:18px; display:flex; gap:10px; justify-content:center;">
+      <button onclick="confirmDaysAndStart()" class="btn">Start</button>
+      <button onclick="closeDaysModal()" class="btn secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
 <script src="travel-data.js"></script>
 <script src="main.js"></script>
 </body>
