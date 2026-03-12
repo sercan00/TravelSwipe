@@ -63,8 +63,10 @@ async function loadCard() {
     <div id="swipe-card" class="swipe-card">
       <img class="card-img" src="${currentPlace.image}" alt="${currentPlace.name}">
       <h2>${currentPlace.name}</h2>
-      <p class="subtle">${currentIndex + 1} / ${filteredAttractions.length}</p>
-      <p class="description">${currentPlace.description ?? ""}</p>
+<div class="progress-bar-wrap">
+  <div class="progress-bar" style="width: ${Math.round(((currentIndex + 1) / filteredAttractions.length) * 100)}%"></div>
+</div>
+<p class="subtle">${currentIndex + 1} / ${filteredAttractions.length}</p>      <p class="description">${currentPlace.description ?? ""}</p>
 
       <div class="actions">
         <button id="btn-skip" class="btn secondary">👎 Skip</button>
@@ -392,36 +394,6 @@ function confirmDaysAndStart(){
   if (pendingCity) startCity(pendingCity);
   closeDaysModal();
 }
-// --- Boot (do this ONCE, keep at bottom of file) ---
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("[TravelSwipe] boot ✅");
-
-  // Map button
-  const mapBtn = document.getElementById("btn-map");
-  if (mapBtn) {
-    mapBtn.addEventListener("click", () => (window.location.href = "map.html"));
-  }
-
-  // City buttons (works even if UI changes)
-  document.addEventListener("click", (e) => {
-    const cityBtn = e.target.closest(".city-btn");
-    if (!cityBtn) return;
-
-    const city = cityBtn.dataset.city;
-    console.log("[TravelSwipe] city:", city);
-
-    try {
-      openDaysModal(city);
-    } catch (err) {
-      console.error(err);
-      alert("Error starting city. Check Console for details.");
-    }
-  });
-});const title = document.getElementById("page-title");
-if (title) {
-  title.style.cursor = "pointer";
-  title.addEventListener("click", goBackToCitySelection);
-}
 
 // --- Chat Assistant (pre-programmed FAQ) ---
 function initChatAssistant(){
@@ -435,7 +407,6 @@ function initChatAssistant(){
   const helpBtn = document.getElementById("chat-help");
   if (helpBtn){
     helpBtn.onclick = () => {
-      // toggle suggestions visibility
       suggEl.style.display = (suggEl.style.display === "none") ? "flex" : "none";
     };
   }
@@ -443,58 +414,21 @@ function initChatAssistant(){
   if (!fab || !panel || !messagesEl || !inputEl || !sendBtn || !suggEl || !closeBtn) return;
 
   const QA = [
-    {
-      q: "How do I swipe?",
-      keywords: ["swipe", "like", "dislike", "left", "right"],
-      a: "Swipe right to like a place and add it to your itinerary. Swipe left to skip. You can also use Undo if you make a mistake."
-    },
-    {
-      q: "How do I change city?",
-      keywords: ["city", "change city", "switch city", "back"],
-      a: "Click the page title (TravelSwipe: Explore …) to go back to the city selection screen, then choose another city."
-    },
-    {
-      q: "How does the category filter work?",
-      keywords: ["filter", "category", "museum", "park"],
-      a: "Use the Category dropdown in the top-right. It will show only places from that category. Choosing 'All' shows everything."
-    },
-    {
-      q: "How do I plan multiple days?",
-      keywords: ["days", "plan", "multiple days", "day 1", "day 2"],
-      a: "Open the map, set the number of days, then click Apply. The app groups nearby places into the same day so you don’t travel back and forth."
-    },
-    {
-      q: "What does 'Set Start' do on the map?",
-      keywords: ["start", "set start", "hotel", "starting point"],
-      a: "Set Start lets you pin where you begin (e.g., hotel). The route is then planned starting from that point."
-    },
-    {
-      q: "Walking vs Car mode?",
-      keywords: ["car", "driving", "walking", "mode"],
-      a: "Mode changes the route type. Walking uses walking paths. Car uses driving roads and the travel time estimate updates accordingly."
-    },
-    {
-      q: "Why is the route order like this?",
-      keywords: ["order", "route order", "algorithm", "optimize"],
-      a: "The app orders stops using a nearest-neighbour route and improves it with a 2-opt step to reduce unnecessary backtracking."
-    },
-    {
-      q: "My map shows no route",
-      keywords: ["no route", "not showing", "error", "route missing"],
-      a: "If there are fewer than 2 places in a day, a route won’t appear. Also check your internet connection since routing uses an online service."
-    }
+    { q: "How do I swipe?", keywords: ["swipe","like","dislike","left","right"], a: "Swipe right to like a place and add it to your itinerary. Swipe left to skip. You can also use Undo if you make a mistake." },
+    { q: "How do I change city?", keywords: ["city","change city","switch city","back"], a: "Click the page title (TravelSwipe: Explore …) to go back to the city selection screen, then choose another city." },
+    { q: "How does the category filter work?", keywords: ["filter","category","museum","park"], a: "Use the Category dropdown in the top-right. It will show only places from that category. Choosing 'All' shows everything." },
+    { q: "How do I plan multiple days?", keywords: ["days","plan","multiple days","day 1","day 2"], a: "Open the map, set the number of days, then click Apply. The app groups nearby places into the same day so you don't travel back and forth." },
+    { q: "What does 'Set Start' do on the map?", keywords: ["start","set start","hotel","starting point"], a: "Set Start lets you pin where you begin (e.g., hotel). The route is then planned starting from that point." },
+    { q: "Walking vs Car mode?", keywords: ["car","driving","walking","mode"], a: "Mode changes the route type. Walking uses walking paths. Car uses driving roads and the travel time estimate updates accordingly." },
+    { q: "Why is the route order like this?", keywords: ["order","route order","algorithm","optimize"], a: "The app orders stops using a nearest-neighbour route and improves it with a 2-opt step to reduce unnecessary backtracking." },
+    { q: "My map shows no route", keywords: ["no route","not showing","error","route missing"], a: "If there are fewer than 2 places in a day, a route won't appear. Also check your internet connection since routing uses an online service." }
   ];
 
-  const DEFAULT_SUGGESTIONS = [
-    "How do I swipe?",
-    "How do I plan multiple days?",
-    "What does 'Set Start' do on the map?",
-    "Walking vs Car mode?"
-  ];
+  const DEFAULT_SUGGESTIONS = ["How do I swipe?","How do I plan multiple days?","What does 'Set Start' do on the map?","Walking vs Car mode?"];
 
   function addBubble(text, who){
     const div = document.createElement("div");
-    div.className = `chat-bubble ${who}`;
+    div.className = "chat-bubble " + who;
     div.textContent = text;
     messagesEl.appendChild(div);
     messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -504,31 +438,18 @@ function initChatAssistant(){
     const t = (userText || "").toLowerCase();
     const liked = JSON.parse(localStorage.getItem("likedAttractions") || "[]");
     const city = localStorage.getItem("selectedCity") || "this city";
-
     if (t.includes("saved") || t.includes("how many") || t.includes("places")) {
-      return `You currently have ${liked.length} saved places in ${city}. Open the map to generate your itinerary.`;
+      return "You currently have " + liked.length + " saved places in " + city + ". Open the map to generate your itinerary.";
     }
-    // exact match on displayed questions
     const exact = QA.find(x => x.q.toLowerCase() === t);
     if (exact) return exact.a;
-
-    // keyword scoring
-    let best = null;
-    let bestScore = 0;
-
+    let best = null, bestScore = 0;
     for (const item of QA){
       let score = 0;
-      for (const kw of item.keywords){
-        if (t.includes(kw)) score++;
-      }
-      if (score > bestScore){
-        bestScore = score;
-        best = item;
-      }
+      for (const kw of item.keywords){ if (t.includes(kw)) score++; }
+      if (score > bestScore){ bestScore = score; best = item; }
     }
-
     if (best && bestScore >= 1) return best.a;
-
     return "I can help with swiping, filters, map days, start point, and walking/car mode. Try one of the suggested questions below.";
   }
 
@@ -538,13 +459,7 @@ function initChatAssistant(){
       const b = document.createElement("button");
       b.className = "chat-chip";
       b.textContent = label;
-      b.onclick = () => {
-        addBubble(label, "user");
-        addBubble(bestAnswer(label), "bot");
-
-        // hide suggestions after first use so chat stays readable
-        suggEl.style.display = "none";
-      };
+      b.onclick = () => { addBubble(label,"user"); addBubble(bestAnswer(label),"bot"); suggEl.style.display = "none"; };
       suggEl.appendChild(b);
     });
   }
@@ -552,48 +467,80 @@ function initChatAssistant(){
   function openChat(){
     panel.style.display = "flex";
     renderSuggestions();
-    if (messagesEl.childElementCount === 0){
-      addBubble("Hi! I’m the TravelSwipe Assistant. Ask me how to use the app.", "bot");
-    }
+    if (messagesEl.childElementCount === 0){ addBubble("Hi! I'm the TravelSwipe Assistant. Ask me how to use the app.","bot"); }
     inputEl.focus();
   }
 
-  function closeChat(){
-    panel.style.display = "none";
-  }
+  function closeChat(){ panel.style.display = "none"; }
 
   function send(){
     const text = inputEl.value.trim();
     if (!text) return;
     inputEl.value = "";
-    addBubble(text, "user");
-    addBubble(bestAnswer(text), "bot");
+    addBubble(text,"user");
+    addBubble(bestAnswer(text),"bot");
   }
 
   fab.addEventListener("click", () => {
     if (panel.style.display === "none" || !panel.style.display) openChat();
     else closeChat();
   });
-
   closeBtn.addEventListener("click", closeChat);
-
   sendBtn.addEventListener("click", send);
-
   inputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") send();
     if (e.key === "Escape") closeChat();
   });
 }
+
+// --- Boot (single entry point) ---
 window.onload = async () => {
+  console.log("[TravelSwipe] boot ✅");
+
   if (window.TravelSwipeDB) {
     await window.TravelSwipeDB.restoreSessionToLocalStorage();
   }
 
-  renderCityButtons();
-  initChatAssistant();
-
   const mapBtn = document.getElementById("btn-map");
   if (mapBtn) {
-    mapBtn.onclick = () => (window.location.href = "map.html");
+    mapBtn.addEventListener("click", () => (window.location.href = "map.html"));
   }
+
+  const title = document.getElementById("page-title");
+  if (title) {
+    title.style.cursor = "pointer";
+    title.addEventListener("click", goBackToCitySelection);
+  }
+
+  document.addEventListener("click", (e) => {
+    const cityBtn = e.target.closest(".city-btn");
+    if (!cityBtn || cityBtn.disabled) return;
+    try {
+      openDaysModal(cityBtn.dataset.city);
+    } catch (err) {
+      console.error(err);
+      alert("Error starting city. Check Console for details.");
+    }
+  });
+
+  initChatAssistant();
 };
+
+// --- Theme toggle ---
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("theme", theme);
+  const btn = document.getElementById("btn-theme");
+  if (btn) btn.textContent = theme === "light" ? "☀️" : "🌙";
+}
+
+const savedTheme = localStorage.getItem("theme") || "dark";
+applyTheme(savedTheme);
+
+const themeBtn = document.getElementById("btn-theme");
+if (themeBtn) {
+  themeBtn.addEventListener("click", () => {
+    const current = localStorage.getItem("theme") || "dark";
+    applyTheme(current === "dark" ? "light" : "dark");
+  });
+}

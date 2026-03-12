@@ -79,6 +79,13 @@
 
 <header class="topbar">
   <h1>Itinerary Map</h1>
+  <button id="btn-theme" onclick="
+    const current = localStorage.getItem('theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    this.textContent = next === 'light' ? '☀️' : '🌙';
+  " style="padding:12px 16px; border-radius:14px; border:1px solid rgba(248,250,252,0.18); background:#111c32; color:#f8fafc; cursor:pointer; font-size:1.1rem;">🌙</button>
 </header>
 
 <div class="mapbar">
@@ -107,6 +114,31 @@
 </div>
 
 <div id="map"></div>
+
+<!-- Chat Assistant -->
+<button id="chat-fab" aria-label="Open chat assistant" title="Help">
+  💬
+</button>
+
+<section id="chat-panel" class="chat-panel" aria-label="Chat assistant" style="display:none;">
+  <div class="chat-header">
+    <div>
+      <strong>TravelSwipe Assistant</strong><br />
+      <span class="chat-subtitle">Map help & tips</span>
+      <button id="chat-help" class="chat-help">Suggested questions</button>
+    </div>
+    <button id="chat-close" class="chat-close" aria-label="Close">✕</button>
+  </div>
+
+  <div id="chat-messages" class="chat-messages"></div>
+  <div class="chat-suggestions" id="chat-suggestions"></div>
+
+  <div class="chat-input">
+    <input id="chat-text" type="text" placeholder="Ask something…" />
+    <button id="chat-send">Send</button>
+  </div>
+</section>
+
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -489,11 +521,14 @@
       const safeId = encodeURIComponent(p.id);
 
       marker.bindPopup(`
-        <b>${i + 1}. ${p.name}</b><br>
-        ${p.category || ""}<br>
-        ${p.description || ""}<br><br>
-        <a href="index.html" class="open-in-app" data-id="${safeId}">Open in app</a>
-      `);
+  <div style="max-width:220px;">
+    <img src="${p.image || ''}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:8px;" />
+    <b>${i + 1}. ${p.name}</b><br>
+    <span style="opacity:0.7; font-size:12px;">${p.category || ""}</span><br>
+    <span style="font-size:13px; line-height:1.4;">${p.description || ""}</span><br><br>
+    <a href="index.html" class="open-in-app" data-id="${safeId}" style="color:#3b82f6; font-weight:600;">Open in app</a>
+  </div>
+`);
 
       marker.on("popupopen", () => {
         const link = document.querySelector('.open-in-app[data-id="' + safeId + '"]');
@@ -535,6 +570,12 @@
       daybar.appendChild(span);
     }
   }
+  // Apply saved theme
+  const savedTheme = localStorage.getItem("theme") || "dark";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  const themeToggle = document.getElementById("btn-theme");
+  if (themeToggle) themeToggle.textContent = savedTheme === "light" ? "☀️" : "🌙";
+
 
   function rebuildPlan(){
     refreshStoredPoints();
@@ -611,6 +652,146 @@
     isPlacingStart = false;
     drawDay(activeDay);
   });
+
+  // --- Map Chat Assistant ---
+  (function initMapChat(){
+    const fab = document.getElementById("chat-fab");
+    const panel = document.getElementById("chat-panel");
+    const closeBtn = document.getElementById("chat-close");
+    const messagesEl = document.getElementById("chat-messages");
+    const inputEl = document.getElementById("chat-text");
+    const sendBtn = document.getElementById("chat-send");
+    const suggEl = document.getElementById("chat-suggestions");
+    const helpBtn = document.getElementById("chat-help");
+
+    if (!fab || !panel || !messagesEl || !inputEl || !sendBtn || !suggEl || !closeBtn) return;
+
+    const QA = [
+      {
+        q: "What does Set Start do?",
+        keywords: ["start", "set start", "hotel", "starting point", "begin"],
+        a: "Click 'Set Start', then click anywhere on the map to place your starting point (e.g. your hotel). The route will begin from there."
+      },
+      {
+        q: "How do multi-day plans work?",
+        keywords: ["days", "day", "multi", "plan", "cluster", "group"],
+        a: "Enter the number of days and click Apply. The app groups nearby attractions into the same day so you spend less time travelling between them."
+      },
+      {
+        q: "Walking vs Driving mode?",
+        keywords: ["walk", "drive", "driving", "walking", "mode", "car"],
+        a: "Use the Mode dropdown to switch between walking and driving. The route and estimated time will update automatically."
+      },
+      {
+        q: "How is the route calculated?",
+        keywords: ["route", "order", "algorithm", "optimize", "path"],
+        a: "The app uses a nearest-neighbour algorithm improved with 2-opt optimisation to find an efficient route that minimises backtracking."
+      },
+      {
+        q: "How do I clear my itinerary?",
+        keywords: ["clear", "reset", "delete", "remove", "empty"],
+        a: "Click 'Clear Itinerary' to remove all saved places. You can then go back and swipe new attractions."
+      },
+      {
+        q: "Why is there no route showing?",
+        keywords: ["no route", "missing", "error", "not showing", "broken"],
+        a: "A route needs at least 2 places in a day. Also check your internet connection since routing uses the OSRM online service."
+      },
+      {
+        q: "How do I go back to swiping?",
+        keywords: ["back", "swipe", "return", "home", "index"],
+        a: "Click the '← Back' button in the top left to return to the swipe page."
+      }
+    ];
+
+    const DEFAULT_SUGGESTIONS = [
+      "What does Set Start do?",
+      "How do multi-day plans work?",
+      "Walking vs Driving mode?",
+      "How is the route calculated?"
+    ];
+
+    function addBubble(text, who){
+      const div = document.createElement("div");
+      div.className = "chat-bubble " + who;
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function bestAnswer(userText){
+      const t = (userText || "").toLowerCase();
+
+      const exact = QA.find(x => x.q.toLowerCase() === t);
+      if (exact) return exact.a;
+
+      let best = null;
+      let bestScore = 0;
+      for (const item of QA){
+        let score = 0;
+        for (const kw of item.keywords){
+          if (t.includes(kw)) score++;
+        }
+        if (score > bestScore){ bestScore = score; best = item; }
+      }
+      if (best && bestScore >= 1) return best.a;
+
+      return "I can help with start points, multi-day plans, route modes, and clearing your itinerary. Try one of the suggested questions.";
+    }
+
+    function renderSuggestions(){
+      suggEl.innerHTML = "";
+      DEFAULT_SUGGESTIONS.forEach((label) => {
+        const b = document.createElement("button");
+        b.className = "chat-chip";
+        b.textContent = label;
+        b.onclick = () => {
+          addBubble(label, "user");
+          addBubble(bestAnswer(label), "bot");
+          suggEl.style.display = "none";
+        };
+        suggEl.appendChild(b);
+      });
+    }
+
+    function openChat(){
+      panel.style.display = "flex";
+      renderSuggestions();
+      if (messagesEl.childElementCount === 0){
+        addBubble("Hi! I can help with the map features. Ask me anything.", "bot");
+      }
+      inputEl.focus();
+    }
+
+    function closeChat(){ panel.style.display = "none"; }
+
+    function send(){
+      const text = inputEl.value.trim();
+      if (!text) return;
+      inputEl.value = "";
+      addBubble(text, "user");
+      addBubble(bestAnswer(text), "bot");
+    }
+
+    fab.addEventListener("click", () => {
+      if (panel.style.display === "none" || !panel.style.display) openChat();
+      else closeChat();
+    });
+
+    closeBtn.addEventListener("click", closeChat);
+    sendBtn.addEventListener("click", send);
+    inputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") send();
+      if (e.key === "Escape") closeChat();
+    });
+
+    if (helpBtn){
+      helpBtn.onclick = () => {
+        suggEl.style.display = (suggEl.style.display === "none") ? "flex" : "none";
+      };
+    }
+  })();
+
 </script>
 
 </body>

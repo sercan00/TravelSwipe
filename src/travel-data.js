@@ -262,7 +262,7 @@ const cityData = {
       id: 203,
       name: 'Shibuya Crossing',
       category: 'Landmark',
-      image: 'images/Tokyo/shibu  ya.jpg',
+      image: 'images/Tokyo/shibuya.jpg',
       description:
         'The world\'s busiest pedestrian crossing, surrounded by giant screens and neon lights.',
       lat: 35.6595,
