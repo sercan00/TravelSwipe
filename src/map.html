@@ -12,66 +12,98 @@
       #map {
           height: 78vh;
           margin: 18px;
-          border-radius: 14px;
+          border-radius: 18px;
           overflow: hidden;
-          border: 1px solid rgba(248,250,252,0.2);
+          border: 1px solid rgba(248,250,252,0.15);
       }
+
       .mapbar{
           display:flex;
           align-items:center;
           justify-content:space-between;
-          padding: 0 18px 12px;
-          gap: 12px;
+          padding: 0 24px 16px;
+          gap: 16px;
           flex-wrap: wrap;
       }
+
       .mapbar .left{
           display:flex;
           align-items:center;
-          gap: 10px;
+          gap: 14px;
           flex-wrap: wrap;
       }
+
       .mapbar a, .mapbar button{
-          padding: 10px 14px;
-          border-radius: 10px;
-          border: 1px solid #334155;
-          background: #0b1220;
+          padding: 18px 28px;
+          border-radius: 16px;
+          border: 1px solid rgba(248,250,252,0.18);
+          background: #111c32;
           color: #f8fafc;
           cursor: pointer;
           text-decoration:none;
           display:inline-block;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 1.2rem;
+          font-weight: 600;
+          transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
       }
+
       .mapbar a:hover, .mapbar button:hover{
-          background:#1e293b;
+          background:#1b2a4a;
           transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.3);
       }
+
       .meta{
-          opacity:0.85;
+          font-size: 1.15rem;
+          font-weight: 600;
+          opacity: 0.85;
       }
 
       #days-input{
-          width: 84px;
-          padding: 10px 12px;
-          border-radius: 10px;
-          border: 1px solid #334155;
+          width: 100px;
+          padding: 18px 16px;
+          border-radius: 16px;
+          border: 1px solid rgba(248,250,252,0.18);
           background: #0b1220;
           color: #f8fafc;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 1.2rem;
           outline: none;
+          text-align: center;
       }
-      .label{
-          opacity: 0.85;
-          font-weight: 600;
-      }
-      .day-btn.active{
-          background:#1e293b;
-      }
-      #travel-mode {
-          padding: 10px 12px;
-          border-radius: 10px;
-          border: 1px solid #334155;
+
+      #travel-mode{
+          padding: 18px 16px;
+          border-radius: 16px;
+          border: 1px solid rgba(248,250,252,0.18);
           background: #0b1220;
           color: #f8fafc;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 1.2rem;
           outline: none;
           cursor: pointer;
+      }
+
+      .label{
+          font-size: 1.2rem;
+          font-weight: 700;
+          opacity: 0.85;
+      }
+
+      .day-btn{
+          font-size: 1.2rem !important;
+          padding: 18px 28px !important;
+      }
+
+      .day-btn.active{
+          background:#1b2a4a;
+          border-color: rgba(59,130,246,0.35);
+          box-shadow: 0 0 0 1px rgba(59,130,246,0.15);
+      }
+
+      .topbar h1{
+          font-family: 'Playfair Display', serif;
       }
   </style>
 </head>
@@ -146,7 +178,6 @@
 <script src="travel-data.js"></script>
 
 <script>
-  // ----- Load saved data safely -----
   const selectedCity = localStorage.getItem("selectedCity") || "London";
   const metaEl = document.getElementById("meta");
 
@@ -182,9 +213,7 @@
     London: [51.5074, -0.1278],
     "New York": [40.7128, -74.0060],
     Tokyo: [35.6762, 139.6503],
-    Istanbul: [41.0082, 28.9784],
-    Oslo: [59.9139, 10.7522],
-    Rio: [-22.9068, -43.1729]
+    Krakow: [50.0647, 19.9450]
   };
 
   const center = fallbackCenter[selectedCity] || [51.5074, -0.1278];
@@ -195,7 +224,7 @@
     attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
 
-  // ----- Days / Plan state -----
+
   let tripDays = Number(localStorage.getItem("tripDays") || "1");
   if (!Number.isFinite(tripDays) || tripDays < 1) tripDays = 1;
   tripDays = Math.min(14, tripDays);
@@ -259,62 +288,62 @@
     saveStartPoint(latlng);
   }
 
-  // ----- Day clustering -----
+  // Day clustering
   function clusterByCloseness(pts, k) {
     if (!pts || pts.length === 0) return [];
     k = Math.max(1, Math.min(k, pts.length));
 
-    let clusters = pts.map(p => ({ places: [p] }));
+    const baseSize = Math.floor(pts.length / k);
+    const remainder = pts.length % k;
 
-    function centroid(c) {
-      const n = c.places.length;
-      const lat = c.places.reduce((s,p)=>s+p.lat,0) / n;
-      const lng = c.places.reduce((s,p)=>s+p.lng,0) / n;
-      return { lat, lng };
+    const sorted = pts.slice().sort((a, b) => b.lat - a.lat);
+
+    const clusters = [];
+    let index = 0;
+    for (let i = 0; i < k; i++) {
+      const size = baseSize + (i < remainder ? 1 : 0);
+      const places = sorted.slice(index, index + size);
+      index += size;
+      clusters.push(places);
     }
 
-    function clusterDist(a, b) {
-      const ca = centroid(a), cb = centroid(b);
-      return euclid(ca, cb);
-    }
+    for (let pass = 0; pass < 5; pass++) {
+      let swapped = false;
+      for (let i = 0; i < clusters.length - 1; i++) {
+        const a = clusters[i];
+        const b = clusters[i + 1];
 
-    while (clusters.length > k) {
-      let bestI = 0, bestJ = 1, bestD = Infinity;
+        for (let ai = 0; ai < a.length; ai++) {
+          for (let bi = 0; bi < b.length; bi++) {
+            const centA = centroidOf(a);
+            const centB = centroidOf(b);
 
-      for (let i = 0; i < clusters.length; i++) {
-        for (let j = i + 1; j < clusters.length; j++) {
-          const d = clusterDist(clusters[i], clusters[j]);
-          if (d < bestD) {
-            bestD = d;
-            bestI = i;
-            bestJ = j;
+            const currentCost = euclid(a[ai], centA) + euclid(b[bi], centB);
+            const swapCost = euclid(b[bi], centA) + euclid(a[ai], centB);
+
+            if (swapCost < currentCost - 0.001) {
+              const temp = a[ai];
+              a[ai] = b[bi];
+              b[bi] = temp;
+              swapped = true;
+            }
           }
         }
       }
-
-      clusters[bestI].places = clusters[bestI].places.concat(clusters[bestJ].places);
-      clusters.splice(bestJ, 1);
+      if (!swapped) break;
     }
 
-    const ordered = clusters
-      .map(c => {
-        const ctd = centroid(c);
-        return { places: c.places, centroid: ctd };
-      })
-      .sort((a,b) => b.centroid.lat - a.centroid.lat);
-
-    return ordered.map((c, idx) => ({
+    return clusters.map((places, idx) => ({
       day: idx + 1,
-      centroid: c.centroid,
-      places: c.places
+      centroid: centroidOf(places),
+      places: places
     }));
   }
 
-  // ----- Routing -----
-  function centroidOf(list){
+  function centroidOf(list) {
     const n = list.length || 1;
-    const lat = list.reduce((s,p)=>s+p.lat,0) / n;
-    const lng = list.reduce((s,p)=>s+p.lng,0) / n;
+    const lat = list.reduce((s, p) => s + p.lat, 0) / n;
+    const lng = list.reduce((s, p) => s + p.lng, 0) / n;
     return { lat, lng };
   }
 
@@ -570,7 +599,6 @@
       daybar.appendChild(span);
     }
   }
-  // Apply saved theme
   const savedTheme = localStorage.getItem("theme") || "dark";
   document.documentElement.setAttribute("data-theme", savedTheme);
   const themeToggle = document.getElementById("btn-theme");
@@ -615,7 +643,6 @@
     }
   };
 
-  // Travel mode toggle
   const travelModeSelect = document.getElementById("travel-mode");
   const savedMode = localStorage.getItem("travelMode") || "walking";
   travelModeSelect.value = savedMode;
@@ -626,7 +653,7 @@
     drawDay(activeDay);
   });
 
-  // ----- Init -----
+
   rebuildPlan();
 
   if (points.length === 0) {
@@ -653,7 +680,7 @@
     drawDay(activeDay);
   });
 
-  // --- Map Chat Assistant ---
+  // Map Chat Assistant
   (function initMapChat(){
     const fab = document.getElementById("chat-fab");
     const panel = document.getElementById("chat-panel");

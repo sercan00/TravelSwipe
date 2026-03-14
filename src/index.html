@@ -16,16 +16,35 @@
 </header>
 
 <section id="city-screen">
-  <h2>Select a city</h2>
-  <div class="city-buttons">
-    <button class="city-btn" data-city="London">London</button>
-    <button class="city-btn" data-city="New York">New York</button>
-    <button class="city-btn" data-city="Tokyo">Tokyo</button>
-    <button class="city-btn" data-city="Istanbul">Istanbul</button>
+  <h2>Select a City</h2>
+  <div class="city-grid">
+    <button class="city-tile" data-city="London">
+      <img class="tile-bg" src="images/CityCovers/LondonCover.jpg" alt="London" />
+      <div class="tile-overlay"></div>
+      <span class="tile-name">London</span>
+      <span class="tile-sub">12 attractions</span>
+    </button>
+    <button class="city-tile" data-city="New York">
+      <img class="tile-bg" src="images/CityCovers/Newyork.jpg" alt="New York" />
+      <div class="tile-overlay"></div>
+      <span class="tile-name">New York</span>
+      <span class="tile-sub">10 attractions</span>
+    </button>
+    <button class="city-tile" data-city="Tokyo">
+      <img class="tile-bg" src="images/CityCovers/Tokyo.png" alt="Tokyo" />
+      <div class="tile-overlay"></div>
+      <span class="tile-name">Tokyo</span>
+      <span class="tile-sub">12 attractions</span>
+    </button>
+    <button class="city-tile" data-city="Krakow">
+      <img class="tile-bg" src="images/CityCovers/Krakow.jpg" alt="Krakow" />
+      <div class="tile-overlay"></div>
+      <span class="tile-name">Krakow</span>
+      <span class="tile-sub">12 attractions</span>
+    </button>
   </div>
 </section>
 
-<!-- Controls now sits nicely inside the topbar on the right -->
 <div class="container" id="controls-wrap" style="display:none;">
   <div id="controls"></div>
 </div>
@@ -67,7 +86,25 @@
     <button id="chat-send">Send</button>
   </div>
 </section>
-<!-- Days Modal -->
+
+<div id="tutorial-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:200; align-items:center; justify-content:center;">
+  <div style="text-align:center; max-width:460px; padding:40px 32px; background:#0f172a; border:1px solid rgba(248,250,252,0.15); border-radius:22px;">
+    <div style="font-size:3.5rem; margin-bottom:16px;">👈  🃏  👉</div>
+    <h2 style="font-family:'Playfair Display',serif; font-size:1.8rem; margin-bottom:12px;">How to Use</h2>
+    <p style="color:rgba(248,250,252,0.75); font-size:1.1rem; line-height:1.6; margin-bottom:8px;">
+      <strong style="color:#22c55e;">Swipe right</strong> or click <strong>Like</strong> to save a place.
+    </p>
+    <p style="color:rgba(248,250,252,0.75); font-size:1.1rem; line-height:1.6; margin-bottom:8px;">
+      <strong style="color:#ef4444;">Swipe left</strong> or click <strong>Skip</strong> to move on.
+    </p>
+    <p style="color:rgba(248,250,252,0.75); font-size:1.1rem; line-height:1.6; margin-bottom:24px;">
+      Use <strong>⭐ Star</strong> to mark your top choices in the itinerary.
+    </p>
+    <button onclick="dismissTutorial()" class="btn" style="padding:16px 40px; font-size:1.2rem;">Got it!</button>
+  </div>
+</div>
+
+
 <div id="days-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; display:none; align-items:center; justify-content:center;">
   <div style="background:#0f172a; border:1px solid rgba(248,250,252,0.2); border-radius:16px; padding:28px; text-align:center; min-width:280px;">
     <h3 style="margin:0 0 14px;">How many days is your trip?</h3>

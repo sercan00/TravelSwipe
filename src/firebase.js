@@ -1,4 +1,4 @@
-// Firebase setup + anonymous session storage
+// Firebase setup (database)
 
 const firebaseConfig = {
   apiKey: "AIzaSyDu5jtOKChkc6MTS7f4wyc28yTcFk76AUU",

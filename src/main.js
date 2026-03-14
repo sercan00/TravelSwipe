@@ -1,3 +1,5 @@
+// this file runs the main swipe page, handles city selection, swiping, filters, itinerary and the chat
+
 let swipeHistory = [];
 let currentIndex = 0;
 let likedAttractions = [];
@@ -21,7 +23,6 @@ function preloadImage(url) {
 
     img.onload = async () => {
       try {
-        // decode makes it appear instantly when inserted into DOM
         if (img.decode) await img.decode();
       } catch {}
       resolve(true);
@@ -52,15 +53,29 @@ async function loadCard() {
   const currentPlace = filteredAttractions[currentIndex];
 
   if (!currentPlace) {
-    container.innerHTML = "<h3>No more places! Check your list.</h3>";
+    container.innerHTML = `
+      <div id="end-card" class="swipe-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:400px; gap:20px;">
+        <div style="font-size:4rem;">🎉</div>
+        <h2 style="margin:0; font-family:'Playfair Display',serif;">You've seen all the places!</h2>
+        <p style="color:rgba(248,250,252,0.6); font-size:1.15rem; margin:0;">Your itinerary is ready. View it on the map.</p>
+        <button onclick="window.location.href='map.html'" class="btn" style="padding:20px 44px; font-size:1.3rem; margin-top:12px; background:var(--navy);">🗺️ View My Itinerary</button>
+      </div>
+    `;
+
+    const endCard = document.getElementById("end-card");
+    if (endCard) {
+      endCard.classList.add("shake");
+      setTimeout(() => endCard.classList.remove("shake"), 500);
+    }
     return;
   }
 
-  // Preload current image if not cached
   await preloadImage(currentPlace.image);
 
   container.innerHTML = `
     <div id="swipe-card" class="swipe-card">
+      <span id="overlay-like" class="swipe-overlay like">LIKE</span>
+      <span id="overlay-skip" class="swipe-overlay skip">SKIP</span>
       <img class="card-img" src="${currentPlace.image}" alt="${currentPlace.name}">
       <h2>${currentPlace.name}</h2>
 <div class="progress-bar-wrap">
@@ -76,7 +91,6 @@ async function loadCard() {
     </div>
   `;
 
-  // Improve image loading priority
   const imgEl = container.querySelector(".card-img");
   if (imgEl) {
     imgEl.loading = "eager";
@@ -84,7 +98,7 @@ async function loadCard() {
     imgEl.fetchPriority = "high";
   }
 
-  // Button actions
+  // Button actions here
   const likeBtn = document.getElementById("btn-like");
   const skipBtn = document.getElementById("btn-skip");
   const undoBtn = document.getElementById("btn-undo");
@@ -93,10 +107,8 @@ async function loadCard() {
   if (skipBtn) skipBtn.onclick = () => handleSwipe("left");
   if (undoBtn) undoBtn.onclick = undoLastSwipe;
 
-  // Keep swipe gestures
   attachSwipeHandlers();
 
-  // Preload next images
   preloadUpcomingImages(filteredAttractions, currentIndex + 1, 20);
 }
 function startCity(cityName) {
@@ -104,7 +116,6 @@ function startCity(cityName) {
   attractions = cityData[cityName] || [];
   selectedCategory = "All";
 
-  // reset current session for this city
   likedAttractions = [];
   swipeHistory = [];
   currentIndex = 0;
@@ -115,10 +126,27 @@ function startCity(cityName) {
   const pageTitle = document.getElementById("page-title");
   if (pageTitle) pageTitle.textContent = `TravelSwipe: Explore ${cityName}`;
 
-  document.getElementById("city-screen").style.display = "none";
-  document.getElementById("app").style.display = "block";
-  document.getElementById("controls-wrap").style.display = "block";
-  document.getElementById("controls").style.display = "flex";
+
+  const cityScreen = document.getElementById("city-screen");
+  const app = document.getElementById("app");
+
+  cityScreen.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+  cityScreen.style.opacity = "0";
+  cityScreen.style.transform = "translateY(-20px)";
+
+  setTimeout(() => {
+    cityScreen.style.display = "none";
+    app.style.display = "block";
+    app.style.opacity = "0";
+    app.style.transform = "translateY(20px)";
+
+    requestAnimationFrame(() => {
+      app.style.transition = "opacity 0.4s ease, transform 0.4s ease";
+      app.style.opacity = "1";
+      app.style.transform = "translateY(0)";
+    });
+  }, 300);
+
   renderFilterUI();
   applyFilter();
   jumpToAttractionIfRequested();
@@ -127,6 +155,7 @@ function startCity(cityName) {
   if (window.TravelSwipeDB) {
     window.TravelSwipeDB.saveCurrentSession();
   }
+  showTutorialIfNeeded();
 }
 function goBackToCitySelection() {
   // reset state
@@ -141,9 +170,27 @@ function goBackToCitySelection() {
   const pageTitle = document.getElementById("page-title");
   if (pageTitle) pageTitle.textContent = "TravelSwipe";
 
-  document.getElementById("app").style.display = "none";
-  document.getElementById("controls-wrap").style.display = "none";
-  document.getElementById("city-screen").style.display = "block";
+  const app = document.getElementById("app");
+  const controlsWrap = document.getElementById("controls-wrap");
+  const cityScreen = document.getElementById("city-screen");
+
+  app.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+  app.style.opacity = "0";
+  app.style.transform = "translateY(-20px)";
+
+  setTimeout(() => {
+    app.style.display = "none";
+    controlsWrap.style.display = "none";
+    cityScreen.style.display = "block";
+    cityScreen.style.opacity = "0";
+    cityScreen.style.transform = "translateY(20px)";
+
+    requestAnimationFrame(() => {
+      cityScreen.style.transition = "opacity 0.4s ease, transform 0.4s ease";
+      cityScreen.style.opacity = "1";
+      cityScreen.style.transform = "translateY(0)";
+    });
+  }, 300);
 }
 function renderCityButtons() {
   document.querySelectorAll(".city-btn").forEach((btn) => {
@@ -203,7 +250,6 @@ function handleSwipe(direction) {
   swipeHistory.push({ place, direction });
 
   if (direction === "right") {
-    // prevent duplicates
     const alreadyLiked = likedAttractions.some((p) => p.id === place.id);
     if (!alreadyLiked) {
       likedAttractions.push(place);
@@ -217,9 +263,16 @@ function handleSwipe(direction) {
   loadCard();
 }
 
+function getMaxPriorities() {
+  return Math.floor(likedAttractions.length / 3) || 0;
+}
+
 function updateItineraryDisplay() {
   const list = document.getElementById("itinerary-list");
   list.innerHTML = "";
+
+  const maxPri = getMaxPriorities();
+  const priorities = JSON.parse(localStorage.getItem("priorities") || "[]");
 
   likedAttractions.forEach((place) => {
     const li = document.createElement("li");
@@ -232,6 +285,30 @@ function updateItineraryDisplay() {
     rightSide.style.alignItems = "center";
     rightSide.style.gap = "8px";
 
+    const isPriority = priorities.includes(place.id);
+    const currentCount = priorities.filter(id => likedAttractions.some(a => a.id === id)).length;
+
+    const priorityBtn = document.createElement("button");
+    priorityBtn.className = "priority-btn" + (isPriority ? " active" : "");
+    priorityBtn.textContent = "⭐";
+    priorityBtn.title = isPriority ? "Remove from top choices" : "Mark as top choice";
+    priorityBtn.onclick = () => {
+      let updated = JSON.parse(localStorage.getItem("priorities") || "[]");
+      if (updated.includes(place.id)) {
+        updated = updated.filter(id => id !== place.id);
+      } else {
+        const activeCount = updated.filter(id => likedAttractions.some(a => a.id === id)).length;
+        if (activeCount >= maxPri) {
+          alert("You can mark " + maxPri + " top choice(s) for " + likedAttractions.length + " attractions (1 per 3).");
+          return;
+        }
+        updated.push(place.id);
+      }
+      localStorage.setItem("priorities", JSON.stringify(updated));
+      if (window.TravelSwipeDB) window.TravelSwipeDB.saveCurrentSession();
+      updateItineraryDisplay();
+    };
+
     const badge = document.createElement("span");
     badge.className = "badge";
     badge.textContent = place.category || "Place";
@@ -242,10 +319,14 @@ function updateItineraryDisplay() {
     removeBtn.title = "Remove from itinerary";
     removeBtn.onclick = () => {
       likedAttractions = likedAttractions.filter((p) => p.id !== place.id);
+      let pri = JSON.parse(localStorage.getItem("priorities") || "[]");
+      pri = pri.filter(id => id !== place.id);
+      localStorage.setItem("priorities", JSON.stringify(pri));
       saveItinerary();
       updateItineraryDisplay();
     };
 
+    rightSide.appendChild(priorityBtn);
     rightSide.appendChild(badge);
     rightSide.appendChild(removeBtn);
 
@@ -287,12 +368,39 @@ function attachSwipeHandlers() {
 
     const rotate = dx * 0.05;
     card.style.transform = `translate(${dx}px, ${dy * 0.2}px) rotate(${rotate}deg)`;
+
+    // Colour tint and overlay feedback
+    const progress = Math.min(Math.abs(dx) / SWIPE_THRESHOLD, 1);
+    const likeOverlay = document.getElementById("overlay-like");
+    const skipOverlay = document.getElementById("overlay-skip");
+
+    if (dx > 0) {
+      card.style.boxShadow = `inset 0 0 ${60 * progress}px rgba(34,197,94,${0.25 * progress})`;
+      if (likeOverlay) likeOverlay.style.opacity = progress;
+      if (skipOverlay) skipOverlay.style.opacity = 0;
+    } else if (dx < 0) {
+      card.style.boxShadow = `inset 0 0 ${60 * progress}px rgba(239,68,68,${0.25 * progress})`;
+      if (skipOverlay) skipOverlay.style.opacity = progress;
+      if (likeOverlay) likeOverlay.style.opacity = 0;
+    } else {
+      card.style.boxShadow = "";
+      if (likeOverlay) likeOverlay.style.opacity = 0;
+      if (skipOverlay) skipOverlay.style.opacity = 0;
+    }
   });
 
   function endDrag() {
     if (!isDragging) return;
     isDragging = false;
     card.classList.remove("dragging");
+
+    card.style.boxShadow = "";
+    const likeOv = document.getElementById("overlay-like");
+    const skipOv = document.getElementById("overlay-skip");
+    if (likeOv) likeOv.style.opacity = 0;
+    if (skipOv) skipOv.style.opacity = 0;
+
+    card.style.transition = "transform 200ms ease";
 
     if (dx > SWIPE_THRESHOLD) {
       card.style.transform = `translate(600px, 0px) rotate(20deg)`;
@@ -355,14 +463,12 @@ function jumpToAttractionIfRequested() {
     return;
   }
 
-  // find index in current filtered list
   const idx = filteredAttractions.findIndex((a) => Number(a.id) === jumpId);
 
   if (idx >= 0) {
     currentIndex = idx;
   }
 
-  // clear so it doesn't keep jumping forever
   localStorage.removeItem("jumpToAttractionId");
 }
 
@@ -395,7 +501,10 @@ function confirmDaysAndStart(){
   closeDaysModal();
 }
 
-// --- Chat Assistant (pre-programmed FAQ) ---
+
+
+
+//Chat Assistant
 function initChatAssistant(){
   const fab = document.getElementById("chat-fab");
   const panel = document.getElementById("chat-panel");
@@ -493,7 +602,21 @@ function initChatAssistant(){
   });
 }
 
-// --- Boot (single entry point) ---
+function showTutorialIfNeeded() {
+  if (localStorage.getItem("tutorialSeen")) return;
+  const overlay = document.getElementById("tutorial-overlay");
+  if (overlay) overlay.style.display = "flex";
+}
+
+function dismissTutorial() {
+  localStorage.setItem("tutorialSeen", "true");
+  const overlay = document.getElementById("tutorial-overlay");
+  if (overlay) overlay.style.display = "none";
+}
+
+
+
+
 window.onload = async () => {
   console.log("[TravelSwipe] boot ✅");
 
@@ -513,7 +636,7 @@ window.onload = async () => {
   }
 
   document.addEventListener("click", (e) => {
-    const cityBtn = e.target.closest(".city-btn");
+    const cityBtn = e.target.closest(".city-tile") || e.target.closest(".city-btn");
     if (!cityBtn || cityBtn.disabled) return;
     try {
       openDaysModal(cityBtn.dataset.city);
@@ -526,7 +649,10 @@ window.onload = async () => {
   initChatAssistant();
 };
 
-// --- Theme toggle ---
+
+
+
+
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("theme", theme);

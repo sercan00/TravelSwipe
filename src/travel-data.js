@@ -122,22 +122,16 @@ const cityData = {
     },
   ],
 
-
-
-
-
-
-
   'New York': [
     {
       id: 101,
-      name: 'Statue of Liberty',
-      category: 'Landmark',
-      image: 'images/NY/statueofliberty.jpg',
+      name: 'Russ & Daughters',
+      category: 'Restaurant',
+      image: 'images/NY/russdaughters.jpg',
       description:
-        'One of the most famous symbols of freedom in the world, located on Liberty Island.',
-      lat: 40.6892,
-      lng: -74.0445,
+        'A legendary Jewish deli on the Lower East Side, famous for smoked fish, bagels, and classic New York appetising since 1914.',
+      lat: 40.7226,
+      lng: -73.9885,
     },
     {
       id: 102,
@@ -231,11 +225,131 @@ const cityData = {
     },
   ],
 
-  Istanbul: [],
+  Krakow: [
+    {
+      id: 301,
+      name: 'Wawel Royal Castle',
+      category: 'History',
+      image: 'images/Krakow/WawelRoyal.jpg',
+      description:
+        'A stunning hilltop castle that served as the seat of Polish kings for centuries, overlooking the Vistula River.',
+      lat: 50.0540,
+      lng: 19.9352,
+    },
+    {
+      id: 302,
+      name: 'Main Market Square',
+      category: 'Landmark',
+      image: 'images/Krakow/MainMarket.jpg',
+      description:
+        'The largest medieval town square in Europe, surrounded by historic buildings, cafes, and the famous Cloth Hall.',
+      lat: 50.0617,
+      lng: 19.9373,
+    },
+    {
+      id: 303,
+      name: "St Mary's Basilica",
+      category: 'History',
+      image: 'images/Krakow/StMarysBasilica.jpg',
+      description:
+        'A 14th-century Gothic church famous for its wooden altarpiece by Veit Stoss and the hourly trumpet call from its tower.',
+      lat: 50.0616,
+      lng: 19.9392,
+    },
+    {
+      id: 304,
+      name: 'Kazimierz District',
+      category: 'Landmark',
+      image: 'images/Krakow/KazimierzDistrict.jpg',
+      description:
+        'The historic Jewish quarter, now a vibrant neighbourhood full of art galleries, street art, bars, and cultural heritage.',
+      lat: 50.0487,
+      lng: 19.9453,
+    },
+    {
+      id: 305,
+      name: 'Wawel Cathedral',
+      category: 'History',
+      image: 'images/Krakow/WawelCathedral.jpg',
+      description:
+        'One of the most sacred temples in Poland, where kings were crowned and laid to rest for centuries.',
+      lat: 50.0543,
+      lng: 19.9354,
+    },
+    {
+      id: 306,
+      name: 'Planty Park',
+      category: 'Park',
+      image: 'images/Krakow/PlantyPark.jpg',
+      description:
+        'A green belt encircling the Old Town, perfect for a peaceful walk among flowers, fountains, and towering trees.',
+      lat: 50.0614,
+      lng: 19.9320,
+    },
+    {
+      id: 307,
+      name: 'Rynek Underground Museum',
+      category: 'Museum',
+      image: 'images/Krakow/RynekMuseum.jpg',
+      description:
+        'A fascinating museum beneath the Main Square, revealing medieval market stalls and archaeological treasures.',
+      lat: 50.0615,
+      lng: 19.9373,
+    },
+    {
+      id: 308,
+      name: 'Collegium Maius',
+      category: 'Museum',
+      image: 'images/Krakow/Collegium.jpg',
+      description:
+        'The oldest university building in Poland, dating back to the 14th century. Copernicus studied here. Features a stunning Gothic courtyard.',
+      lat: 50.0614,
+      lng: 19.9333,
+    },
 
-  Oslo: [],
+    {
+      id: 309,
+      name: 'The Barbican',
+      category: 'History',
+      image: 'images/Krakow/barbican.jpg',
+      description:
+        'A well-preserved medieval fortress gatehouse and one of the finest remaining examples of European defensive architecture.',
+      lat: 50.0654,
+      lng: 19.9414,
+    },
+    {
+      id: 310,
+      name: 'Cloth Hall',
+      category: 'Shopping',
+      image: 'images/Krakow/cloth.jpg',
+      description:
+        'A Renaissance trading hall in the centre of the Main Square, now filled with souvenir shops and a gallery upstairs.',
+      lat: 50.0618,
+      lng: 19.9373,
+    },
 
-  Rio: [],
+    {
+      id: 311,
+      name: 'Old Synagogue',
+      category: 'History',
+      image: 'images/Krakow/Old.jpg',
+      description:
+        'The oldest surviving synagogue in Poland, built in the 15th century in the Kazimierz district. Now a museum of Jewish history and culture.',
+      lat: 50.0491,
+      lng: 19.9460,
+    },
+
+    {
+      id: 308,
+      name: 'Collegium Maius',
+      category: 'Museum',
+      image: 'images/Krakow/collegium.jpg',
+      description:
+        'The oldest university building in Poland, dating back to the 14th century. Copernicus studied here. Features a stunning Gothic courtyard.',
+      lat: 50.0614,
+      lng: 19.9333,
+    },
+  ],
 
   Tokyo: [
     {
