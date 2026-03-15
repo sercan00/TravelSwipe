@@ -81,8 +81,10 @@ async function loadCard() {
 <div class="progress-bar-wrap">
   <div class="progress-bar" style="width: ${Math.round(((currentIndex + 1) / filteredAttractions.length) * 100)}%"></div>
 </div>
-<p class="subtle">${currentIndex + 1} / ${filteredAttractions.length}</p>      <p class="description">${currentPlace.description ?? ""}</p>
-
+<p class="subtle">${currentIndex + 1} / ${filteredAttractions.length}</p>     
+<p class="description">${currentPlace.description ?? ""}</p>
+      ${currentPlace.wiki ? `<a href="${currentPlace.wiki}" target="_blank" class="learn-more">Learn more ↗</a>` : ""}
+      
       <div class="actions">
         <button id="btn-skip" class="btn secondary">👎 Skip</button>
         <button id="btn-like" class="btn">👍 Like</button>
@@ -349,7 +351,11 @@ function attachSwipeHandlers() {
   const SWIPE_THRESHOLD = 120;
 
   card.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".learn-more")) return;
+
     isDragging = true;
+
+
     card.classList.add("dragging");
 
     startX = e.clientX;

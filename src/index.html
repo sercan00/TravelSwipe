@@ -19,27 +19,31 @@
   <h2>Select a City</h2>
   <div class="city-grid">
     <button class="city-tile" data-city="London">
-      <img class="tile-bg" src="images/CityCovers/LondonCover.jpg" alt="London" />
+      <img class="tile-bg" src="images/cityCovers/LondonCover.jpg" alt="London" />
       <div class="tile-overlay"></div>
       <span class="tile-name">London</span>
+      <span class="tile-weather">Loading...</span>
       <span class="tile-sub">12 attractions</span>
     </button>
     <button class="city-tile" data-city="New York">
-      <img class="tile-bg" src="images/CityCovers/Newyork.jpg" alt="New York" />
+      <img class="tile-bg" src="images/cityCovers/Newyork.jpg" alt="New York" />
       <div class="tile-overlay"></div>
       <span class="tile-name">New York</span>
+      <span class="tile-weather">Loading...</span>
       <span class="tile-sub">10 attractions</span>
     </button>
     <button class="city-tile" data-city="Tokyo">
-      <img class="tile-bg" src="images/CityCovers/Tokyo.png" alt="Tokyo" />
+      <img class="tile-bg" src="images/cityCovers/Tokyo.png" alt="Tokyo" />
       <div class="tile-overlay"></div>
       <span class="tile-name">Tokyo</span>
+      <span class="tile-weather">Loading...</span>
       <span class="tile-sub">12 attractions</span>
     </button>
     <button class="city-tile" data-city="Krakow">
-      <img class="tile-bg" src="images/CityCovers/Krakow.jpg" alt="Krakow" />
+      <img class="tile-bg" src="images/cityCovers/Krakow.jpg" alt="Krakow" />
       <div class="tile-overlay"></div>
       <span class="tile-name">Krakow</span>
+      <span class="tile-weather">Loading...</span>
       <span class="tile-sub">12 attractions</span>
     </button>
   </div>
@@ -119,6 +123,49 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase.js"></script>
+<script>
+  // fetches weather for each city and shows it on the tiles
+  const WEATHER_API_KEY = "4a3a219bade3cbf2bfba973137944691";
+
+  const cityCoords = {
+    London: { lat: 51.5074, lon: -0.1278 },
+    "New York": { lat: 40.7128, lon: -74.0060 },
+    Tokyo: { lat: 35.6762, lon: 139.6503 },
+    Krakow: { lat: 50.0647, lon: 19.9450 }
+  };
+
+  async function loadWeather() {
+    for (const [city, coords] of Object.entries(cityCoords)) {
+      try {
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lon}&units=metric&appid=${WEATHER_API_KEY}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const temp = Math.round(data.main.temp);
+        const icon = data.weather[0].icon;
+        const desc = data.weather[0].main;
+        const iconUrl = `https://openweathermap.org/img/wn/${icon}.png`;
+
+        const tile = document.querySelector(`.city-tile[data-city="${city}"]`);
+        if (!tile) continue;
+
+        const weatherEl = tile.querySelector(".tile-weather");
+        if (weatherEl) {
+          weatherEl.innerHTML = `<img src="${iconUrl}" alt="${desc}" style="width:32px; height:32px; vertical-align:middle;"> ${temp}°C`;
+        }
+      } catch (err) {
+        console.log("Weather fetch failed for " + city, err);
+        const tile = document.querySelector(`.city-tile[data-city="${city}"]`);
+        if (tile) {
+          const weatherEl = tile.querySelector(".tile-weather");
+          if (weatherEl) weatherEl.textContent = "";
+        }
+      }
+    }
+  }
+
+  loadWeather();
+</script>
 <script src="travel-data.js"></script>
 <script src="main.js"></script>
 </body>

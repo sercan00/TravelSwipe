@@ -301,3 +301,31 @@ body{
 .shake{
     animation: shake 0.5s ease;
 }
+
+/* ===== Learn more link ===== */
+.learn-more{
+    display: inline-block;
+    color: #60a5fa;
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-decoration: none;
+    margin-bottom: 12px;
+    transition: opacity 0.15s;
+}
+
+.learn-more:hover{
+    opacity: 0.7;
+    text-decoration: underline;
+}
+
+
+/* ===== Weather on city tiles ===== */
+.tile-weather{
+    font-size: 1.2rem;
+    font-weight: 600;
+    opacity: 0.85;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
