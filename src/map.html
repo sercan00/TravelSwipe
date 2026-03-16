@@ -10,11 +10,7 @@
 
   <style>
       #map {
-          height: 78vh;
-          margin: 18px;
-          border-radius: 18px;
-          overflow: hidden;
-          border: 1px solid rgba(248,250,252,0.15);
+          height: 100%;
       }
 
       .mapbar{
@@ -105,6 +101,90 @@
       .topbar h1{
           font-family: 'Playfair Display', serif;
       }
+
+      .tl-item{
+          display: flex;
+          gap: 14px;
+          align-items: flex-start;
+      }
+      .tl-line{
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          width: 24px;
+          flex-shrink: 0;
+      }
+      .tl-dot{
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: #3b82f6;
+          border: 2px solid #60a5fa;
+          flex-shrink: 0;
+      }
+      .tl-dot.start{
+          background: #22c55e;
+          border-color: #4ade80;
+      }
+      .tl-dot.priority{
+          background: #eab308;
+          border-color: #facc15;
+      }
+      .tl-connector{
+          width: 2px;
+          flex: 1;
+          min-height: 30px;
+          background: rgba(248,250,252,0.15);
+      }
+      .tl-info{
+          padding-bottom: 8px;
+      }
+      .tl-name{
+          font-size: 1.05rem;
+          font-weight: 600;
+          color: #f8fafc;
+      }
+      .tl-cat{
+          font-size: 0.85rem;
+          color: rgba(248,250,252,0.5);
+      }
+      .tl-walk{
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 0 6px 0;
+          margin-left: 11px;
+      }
+      .tl-walk-line{
+          width: 2px;
+          height: 24px;
+          background: rgba(248,250,252,0.1);
+      }
+      .tl-walk-text{
+          font-size: 0.85rem;
+          color: rgba(248,250,252,0.4);
+          font-style: italic;
+      }
+      .tl-total{
+          margin-top: 16px;
+          padding: 14px;
+          border-radius: 12px;
+          background: rgba(248,250,252,0.05);
+          border: 1px solid rgba(248,250,252,0.1);
+          font-size: 1rem;
+          font-weight: 600;
+          color: rgba(248,250,252,0.75);
+          text-align: center;
+      }
+      #timeline-panel::-webkit-scrollbar{ width: 4px; }
+      #timeline-panel::-webkit-scrollbar-thumb{ background: rgba(248,250,252,0.15); border-radius:99px; }
+
+      @media (max-width: 900px){
+          #timeline-panel{ display: none; }
+      }
+
+
+
   </style>
 </head>
 <body>
@@ -145,7 +225,14 @@
   </div>
 </div>
 
-<div id="map"></div>
+<div style="display:flex; gap:0; height:78vh; margin:18px;">
+  <div id="map" style="flex:1; border-radius:18px 0 0 18px; overflow:hidden; border:1px solid rgba(248,250,252,0.15); border-right:none;"></div>
+  <div id="timeline-panel" style="width:340px; background:rgba(15,23,42,0.85); border:1px solid rgba(248,250,252,0.15); border-radius:0 18px 18px 0; overflow-y:auto; padding:20px 16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:1.3rem; margin:0 0 16px;">Day Schedule</h3>
+    <div id="timeline-content"></div>
+  </div>
+</div>
+
 
 <!-- Chat Assistant -->
 <button id="chat-fab" aria-label="Open chat assistant" title="Help">
@@ -572,6 +659,7 @@
 
     fitToList(dayObj.places);
     drawRouteForList(dayObj.places);
+    renderTimeline(dayNumber);
   }
 
   function renderDayBar(){
@@ -599,10 +687,81 @@
       daybar.appendChild(span);
     }
   }
+
+
   const savedTheme = localStorage.getItem("theme") || "dark";
   document.documentElement.setAttribute("data-theme", savedTheme);
   const themeToggle = document.getElementById("btn-theme");
   if (themeToggle) themeToggle.textContent = savedTheme === "light" ? "☀️" : "🌙";
+
+
+  // builds the timeline panel for a given day
+  async function renderTimeline(dayNumber) {
+    const container = document.getElementById("timeline-content");
+    if (!container) return;
+
+    const dayObj = dayPlan.find(d => d.day === dayNumber);
+    if (!dayObj || dayObj.places.length === 0) {
+      container.innerHTML = '<p style="opacity:0.5;">No places for this day.</p>';
+      return;
+    }
+
+    const priorities = JSON.parse(localStorage.getItem("priorities") || "[]");
+    const start = loadStartPoint();
+    const ordered = getOptimizedVisitOrderFromStart(dayObj.places, start);
+
+    // get distances between consecutive stops
+    const distances = [];
+    for (let i = 0; i < ordered.length - 1; i++) {
+      const a = ordered[i];
+      const b = ordered[i + 1];
+      const dx = (a.lng - b.lng) * 111320 * Math.cos(a.lat * Math.PI / 180);
+      const dy = (a.lat - b.lat) * 110540;
+      const meters = Math.sqrt(dx * dx + dy * dy);
+      distances.push(meters);
+    }
+
+    const mode = document.getElementById("travel-mode").value || "walking";
+    const speed = mode === "driving" ? 8.33 : 1.3889;
+
+    let html = "";
+    let totalDist = 0;
+
+    ordered.forEach((place, i) => {
+      const isStart = place.id === "__start__";
+      const isPri = priorities.includes(place.id);
+      const dotClass = isStart ? "start" : isPri ? "priority" : "";
+
+      html += `<div class="tl-item">`;
+      html += `<div class="tl-line">`;
+      html += `<div class="tl-dot ${dotClass}"></div>`;
+      if (i < ordered.length - 1) html += `<div class="tl-connector"></div>`;
+      html += `</div>`;
+      html += `<div class="tl-info">`;
+      html += `<div class="tl-name">${isStart ? "📍 Start Point" : (isPri ? "⭐ " : "") + place.name}</div>`;
+      if (!isStart) html += `<div class="tl-cat">${place.category || ""}</div>`;
+      html += `</div>`;
+      html += `</div>`;
+
+      if (i < distances.length) {
+        const dist = distances[i];
+        totalDist += dist;
+        const mins = Math.round((dist / speed) / 60);
+        const modeLabel = mode === "driving" ? "drive" : "walk";
+        html += `<div class="tl-walk">`;
+        html += `<div class="tl-walk-line"></div>`;
+        html += `<span class="tl-walk-text">${Math.round(dist)}m • ~${mins} min ${modeLabel}</span>`;
+        html += `</div>`;
+      }
+    });
+
+    const totalKm = (totalDist / 1000).toFixed(1);
+    const totalMins = Math.round((totalDist / speed) / 60);
+    const modeLabel = mode === "driving" ? "drive" : "walk";
+    html += `<div class="tl-total">${totalKm} km total • ~${totalMins} min ${modeLabel}</div>`;
+
+    container.innerHTML = html;
+  }
 
 
   function rebuildPlan(){
@@ -613,8 +772,11 @@
 
     if (dayPlan.length > 0) {
       drawDay(activeDay);
+      renderTimeline(activeDay);
     } else {
       metaEl.textContent = `${selectedCity} • ${liked.length} saved place(s)`;
+      const container = document.getElementById("timeline-content");
+      if (container) container.innerHTML = '<p style="opacity:0.5;">Like some attractions first.</p>';
     }
   }
 
