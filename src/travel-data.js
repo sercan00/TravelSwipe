@@ -139,7 +139,7 @@ const cityData = {
       id: 101,
       name: 'Russ & Daughters',
       category: 'Restaurant',
-      image: 'images/NY/russdaughters.jpg',
+      image: 'images/NY/Russ.jpg',
       description:
         'A legendary Jewish deli on the Lower East Side, famous for smoked fish, bagels, and classic New York appetising since 1914.',
       lat: 40.7226,

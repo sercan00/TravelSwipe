@@ -380,39 +380,89 @@
     if (!pts || pts.length === 0) return [];
     k = Math.max(1, Math.min(k, pts.length));
 
-    const baseSize = Math.floor(pts.length / k);
-    const remainder = pts.length % k;
+    // start with each point in its own cluster
+    let clusters = pts.map(p => [p]);
 
-    const sorted = pts.slice().sort((a, b) => b.lat - a.lat);
+    // merge closest clusters until we have k groups
+    while (clusters.length > k) {
+      let bestI = 0, bestJ = 1, bestD = Infinity;
 
-    const clusters = [];
-    let index = 0;
-    for (let i = 0; i < k; i++) {
-      const size = baseSize + (i < remainder ? 1 : 0);
-      const places = sorted.slice(index, index + size);
-      index += size;
-      clusters.push(places);
+      for (let i = 0; i < clusters.length; i++) {
+        for (let j = i + 1; j < clusters.length; j++) {
+          const ci = centroidOf(clusters[i]);
+          const cj = centroidOf(clusters[j]);
+          const d = euclid(ci, cj);
+          if (d < bestD) {
+            bestD = d;
+            bestI = i;
+            bestJ = j;
+          }
+        }
+      }
+
+      clusters[bestI] = clusters[bestI].concat(clusters[bestJ]);
+      clusters.splice(bestJ, 1);
     }
 
-    for (let pass = 0; pass < 5; pass++) {
+    // balance the clusters so no day is overloaded
+    const maxSize = Math.ceil(pts.length / k);
+
+    let changed = true;
+    let passes = 0;
+    while (changed && passes < 20) {
+      changed = false;
+      passes++;
+
+      for (let i = 0; i < clusters.length; i++) {
+        if (clusters[i].length <= maxSize) continue;
+
+        // this cluster is too big, find the point furthest from its centroid
+        const cent = centroidOf(clusters[i]);
+        let worstIdx = 0;
+        let worstD = 0;
+        for (let p = 0; p < clusters[i].length; p++) {
+          const d = euclid(clusters[i][p], cent);
+          if (d > worstD) { worstD = d; worstIdx = p; }
+        }
+
+        // find the nearest cluster that has room
+        const point = clusters[i][worstIdx];
+        let bestTarget = -1;
+        let bestTargetD = Infinity;
+        for (let j = 0; j < clusters.length; j++) {
+          if (j === i) continue;
+          if (clusters[j].length >= maxSize) continue;
+          const d = euclid(point, centroidOf(clusters[j]));
+          if (d < bestTargetD) { bestTargetD = d; bestTarget = j; }
+        }
+
+        if (bestTarget >= 0) {
+          clusters[bestTarget].push(point);
+          clusters[i].splice(worstIdx, 1);
+          changed = true;
+        }
+      }
+    }
+
+    // final optimisation, swap points between clusters if it reduces total spread
+    for (let pass = 0; pass < 10; pass++) {
       let swapped = false;
-      for (let i = 0; i < clusters.length - 1; i++) {
-        const a = clusters[i];
-        const b = clusters[i + 1];
+      for (let i = 0; i < clusters.length; i++) {
+        for (let j = i + 1; j < clusters.length; j++) {
+          for (let ai = 0; ai < clusters[i].length; ai++) {
+            for (let bi = 0; bi < clusters[j].length; bi++) {
+              const centI = centroidOf(clusters[i]);
+              const centJ = centroidOf(clusters[j]);
 
-        for (let ai = 0; ai < a.length; ai++) {
-          for (let bi = 0; bi < b.length; bi++) {
-            const centA = centroidOf(a);
-            const centB = centroidOf(b);
+              const currentCost = euclid(clusters[i][ai], centI) + euclid(clusters[j][bi], centJ);
+              const swapCost = euclid(clusters[j][bi], centI) + euclid(clusters[i][ai], centJ);
 
-            const currentCost = euclid(a[ai], centA) + euclid(b[bi], centB);
-            const swapCost = euclid(b[bi], centA) + euclid(a[ai], centB);
-
-            if (swapCost < currentCost - 0.001) {
-              const temp = a[ai];
-              a[ai] = b[bi];
-              b[bi] = temp;
-              swapped = true;
+              if (swapCost < currentCost - 0.0001) {
+                const temp = clusters[i][ai];
+                clusters[i][ai] = clusters[j][bi];
+                clusters[j][bi] = temp;
+                swapped = true;
+              }
             }
           }
         }
