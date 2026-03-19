@@ -62,6 +62,23 @@ async function loadCard() {
       </div>
     `;
 
+    let endUndoWrap = document.getElementById("undo-wrap");
+    if (endUndoWrap) endUndoWrap.innerHTML = '<button id="btn-undo" class="btn secondary" title="Undo your last swipe and go back" style="padding:14px 28px; font-size:1.15rem;">↩️ Undo</button>';
+    const endUndo = document.getElementById("btn-undo");
+    if (endUndo) endUndo.onclick = () => undoLastSwipe();
+
+
+    // add undo button outside the swipe card
+    let undoWrap = document.getElementById("undo-wrap");
+    if (!undoWrap) {
+      undoWrap = document.createElement("div");
+      undoWrap.id = "undo-wrap";
+      undoWrap.style.cssText = "display:flex; justify-content:center; margin-top:14px;";
+      container.parentNode.insertBefore(undoWrap, container.nextSibling);
+    }
+    undoWrap.innerHTML = '<button id="btn-undo" class="btn secondary" title="Undo your last swipe and go back" style="padding:14px 28px; font-size:1.15rem;">↩️ Undo</button>';
+    document.getElementById("btn-undo").onclick = () => undoLastSwipe();
+
     const endCard = document.getElementById("end-card");
     if (endCard) {
       endCard.classList.add("shake");
@@ -85,12 +102,7 @@ async function loadCard() {
 <p class="description">${currentPlace.description ?? ""}</p>
       ${currentPlace.wiki ? `<a href="${currentPlace.wiki}" target="_blank" class="learn-more">Learn more ↗</a>` : ""}
       
-      <div class="actions">
-        <button id="btn-skip" class="btn secondary">👎 Skip</button>
-        <button id="btn-like" class="btn">👍 Like</button>
-        <button id="btn-undo" class="btn secondary">↩️ Undo</button>
       </div>
-    </div>
   `;
 
   const imgEl = container.querySelector(".card-img");
@@ -100,14 +112,6 @@ async function loadCard() {
     imgEl.fetchPriority = "high";
   }
 
-  // Button actions here
-  const likeBtn = document.getElementById("btn-like");
-  const skipBtn = document.getElementById("btn-skip");
-  const undoBtn = document.getElementById("btn-undo");
-
-  if (likeBtn) likeBtn.onclick = () => handleSwipe("right");
-  if (skipBtn) skipBtn.onclick = () => handleSwipe("left");
-  if (undoBtn) undoBtn.onclick = undoLastSwipe;
 
   attachSwipeHandlers();
 
@@ -609,13 +613,11 @@ function initChatAssistant(){
 }
 
 function showTutorialIfNeeded() {
-  if (localStorage.getItem("tutorialSeen")) return;
   const overlay = document.getElementById("tutorial-overlay");
   if (overlay) overlay.style.display = "flex";
 }
 
 function dismissTutorial() {
-  localStorage.setItem("tutorialSeen", "true");
   const overlay = document.getElementById("tutorial-overlay");
   if (overlay) overlay.style.display = "none";
 }

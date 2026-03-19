@@ -203,10 +203,10 @@
 <div class="mapbar">
   <div class="left">
     <a href="index.html">← Back</a>
-    <button id="btn-clear">Clear Itinerary</button>
-    <button id="btn-fit">Fit to Markers</button>
-    <button id="btn-set-start">Set Start</button>
-    <button id="btn-clear-start">Clear Start</button>
+    <button id="btn-clear" title="Removes all saved attractions and resets your itinerary">Clear Itinerary</button>
+    <button id="btn-fit" title="Zooms the map to show all your saved attractions">Fit to Markers</button>
+    <button id="btn-set-start" title="Click this then click anywhere on the map to set your starting point (e.g. your hotel)">Set Start</button>
+    <button id="btn-clear-start" title="Removes your custom starting point">Clear Start</button>
   </div>
   <div class="meta" id="meta"></div>
 </div>
@@ -875,9 +875,22 @@
   const savedStart = loadStartPoint();
   if (savedStart) setStartMarker(savedStart);
 
+  const startMsg = document.createElement("div");
+  startMsg.id = "start-msg";
+  startMsg.style.cssText = "display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0f172a; border:1px solid rgba(248,250,252,0.2); border-radius:18px; padding:28px 36px; text-align:center; z-index:300; box-shadow:0 20px 60px rgba(0,0,0,0.5);";
+  startMsg.innerHTML = '<p style="font-size:1.2rem; font-weight:600; margin:0 0 8px;">Click anywhere on the map</p><p style="opacity:0.6; margin:0 0 16px;">This will set your starting point (e.g. your hotel)</p><button onclick="document.getElementById(\'start-msg\').style.display=\'none\'" style="padding:12px 28px; border-radius:12px; border:1px solid rgba(248,250,252,0.18); background:#111c32; color:#f8fafc; cursor:pointer; font-size:1rem;">Got it</button>';
+  document.body.appendChild(startMsg);
+
   document.getElementById("btn-set-start").onclick = () => {
     isPlacingStart = !isPlacingStart;
-    alert(isPlacingStart ? "Click on the map to set the start point." : "Start point placement cancelled.");
+    const btn = document.getElementById("btn-set-start");
+    if (isPlacingStart) {
+      btn.textContent = "📍 Click the map...";
+      btn.style.background = "#1b2a4a";
+    } else {
+      btn.textContent = "Set Start";
+      btn.style.background = "";
+    }
   };
 
   document.getElementById("btn-clear-start").onclick = () => {
