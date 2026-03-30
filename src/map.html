@@ -641,9 +641,10 @@
   }
 
   async function drawRouteForList(list){
-    if (!list || list.length < 2) return;
-
     const start = loadStartPoint();
+    const totalPoints = (list ? list.length : 0) + (start ? 1 : 0);
+    if (totalPoints < 2) return;
+
     const ordered = getOptimizedVisitOrderFromStart(list, start);
 
     const coords = ordered.map(p => `${p.lng},${p.lat}`).join(";");
