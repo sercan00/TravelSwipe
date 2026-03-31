@@ -540,11 +540,24 @@ function initChatAssistant(){
     { q: "What does 'Set Start' do on the map?", keywords: ["start","set start","hotel","starting point"], a: "Set Start lets you pin where you begin (e.g., hotel). The route is then planned starting from that point." },
     { q: "Walking vs Car mode?", keywords: ["car","driving","walking","mode"], a: "Mode changes the route type. Walking uses walking paths. Car uses driving roads and the travel time estimate updates accordingly." },
     { q: "Why is the route order like this?", keywords: ["order","route order","algorithm","optimize"], a: "The app orders stops using a nearest-neighbour route and improves it with a 2-opt step to reduce unnecessary backtracking." },
-    { q: "My map shows no route", keywords: ["no route","not showing","error","route missing"], a: "If there are fewer than 2 places in a day, a route won't appear. Also check your internet connection since routing uses an online service." }
+    { q: "My map shows no route", keywords: ["no route","not showing","error","route missing"], a: "If there are fewer than 2 places in a day, a route won't appear. Also check your internet connection since routing uses an online service." },
+    { q: "How do I remove a place from my itinerary?", keywords: ["remove","delete","take off","get rid"], a: "Each place in your itinerary has a small ✕ button on the right side. Click it to remove that attraction from your list." },
+    { q: "What are the priority stars?", keywords: ["star","priority","favourite","favorite","top choice"], a: "You can mark your top choices with a ⭐ star. You get 1 star for every 3 attractions you've liked. Starred places get prioritised in the route." },
+    { q: "How do I switch theme?", keywords: ["theme","dark","light","night","mode","colour"], a: "Click the moon or sun icon in the top right corner of the page to switch between dark and light mode." },
+    { q: "What does Learn more do?", keywords: ["learn more","wikipedia","wiki","read more","info"], a: "The Learn more link on each card opens the Wikipedia page for that attraction in a new tab so you can read more about it." },
+    { q: "How many cities are there?", keywords: ["cities","city","how many","which cities","available"], a: "There are currently 4 cities available: London, New York, Tokyo and Krakow. Each has between 10 and 12 attractions." },
+    { q: "What does the weather show?", keywords: ["weather","temperature","rain","sun","forecast"], a: "The city selection screen shows live weather for each city using the OpenWeatherMap API. It shows the current temperature and conditions." },
+    { q: "How do I remove a place from my itinerary?", keywords: ["remove","delete","take off","get rid"], a: "Each place in your itinerary has a small ✕ button on the right side. Click it to remove that attraction from your list." },
+    { q: "What are the priority stars?", keywords: ["star","priority","favourite","favorite","top choice"], a: "You can mark your top choices with a ⭐ star. You get 1 star for every 3 attractions you've liked. Starred places get prioritised in the route." },
+    { q: "How do I switch theme?", keywords: ["theme","dark","light","night","mode","colour"], a: "Click the moon or sun icon in the top right corner of the page to switch between dark and light mode." },
+    { q: "What does Learn more do?", keywords: ["learn more","wikipedia","wiki","read more","info"], a: "The Learn more link on each card opens the Wikipedia page for that attraction in a new tab so you can read more about it." },
+    { q: "How many cities are there?", keywords: ["cities","city","how many","which cities","available"], a: "There are currently 4 cities available: London, New York, Tokyo and Krakow. Each has between 10 and 12 attractions." },
+    { q: "What does the weather show?", keywords: ["weather","temperature","rain","sun","forecast"], a: "The city selection screen shows live weather for each city using the OpenWeatherMap API. It shows the current temperature and conditions." },
+    { q: "How does the timeline work?", keywords: ["timeline","schedule","day schedule","panel","side"], a: "The timeline panel on the map page shows your stops in order for the selected day, with the distance and estimated travel time between each one." },
+    { q: "How does the timeline work?", keywords: ["timeline","schedule","day schedule","panel","side"], a: "The timeline panel on the map page shows your stops in order for the selected day, with the distance and estimated travel time between each one." },
   ];
 
-  const DEFAULT_SUGGESTIONS = ["How do I swipe?","How do I plan multiple days?","What does 'Set Start' do on the map?","Walking vs Car mode?"];
-
+  const DEFAULT_SUGGESTIONS = ["How do I swipe?","What are the priority stars?","How do I plan multiple days?","How does the timeline work?"];
   function addBubble(text, who){
     const div = document.createElement("div");
     div.className = "chat-bubble " + who;
