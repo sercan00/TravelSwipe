@@ -888,12 +888,25 @@
     if (isPlacingStart) {
       btn.textContent = "📍 Click the map...";
       btn.style.background = "#1b2a4a";
+
+      // show instruction popup
+      let popup = document.getElementById("start-popup");
+      if (!popup) {
+        popup = document.createElement("div");
+        popup.id = "start-popup";
+        popup.style.cssText = "position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0f172a; border:1px solid rgba(248,250,252,0.2); border-radius:18px; padding:28px 36px; text-align:center; z-index:300; box-shadow:0 20px 60px rgba(0,0,0,0.5);";
+        popup.innerHTML = '<p style="font-size:1.2rem; font-weight:600; margin:0 0 8px;">Click anywhere on the map</p><p style="opacity:0.6; margin:0 0 16px;">This sets your starting point, for example your hotel or where you are staying.</p><button id="start-popup-close" style="padding:12px 28px; border-radius:12px; border:1px solid rgba(248,250,252,0.18); background:#111c32; color:#f8fafc; cursor:pointer; font-size:1rem;">Got it</button>';
+        document.body.appendChild(popup);
+        document.getElementById("start-popup-close").onclick = () => { popup.style.display = "none"; };
+      } else {
+        popup.style.display = "block";
+      }
     } else {
       btn.textContent = "Set Start";
       btn.style.background = "";
     }
   };
-
+  git add .
   document.getElementById("btn-clear-start").onclick = () => {
     clearStartPoint();
     drawDay(activeDay);
@@ -903,6 +916,10 @@
     if (!isPlacingStart) return;
     setStartMarker(e.latlng);
     isPlacingStart = false;
+    const btn = document.getElementById("btn-set-start");
+    if (btn) { btn.textContent = "Set Start"; btn.style.background = ""; }
+    const popup = document.getElementById("start-popup");
+    if (popup) popup.style.display = "none";
     drawDay(activeDay);
   });
 
