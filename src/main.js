@@ -511,7 +511,8 @@ function confirmDaysAndStart(){
   closeDaysModal();
 }
 
-
+const undoFixed = document.getElementById("btn-undo-fixed");
+if (undoFixed) undoFixed.onclick = () => undoLastSwipe();
 
 
 //Chat Assistant
