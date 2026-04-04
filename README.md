@@ -1,7 +1,6 @@
 # TravelSwipe
 
-A swipe-based travel itinerary planner that lets users discover attractions by swiping through photos and generates optimised routes on an interactive map.
-
+A swipe-based travel itinerary planner that lets users discover attractions through photo cards and generates optimised routes on an interactive map.
 ## What it does
 
 - Select a city and swipe through attraction cards (right to like, left to skip)
@@ -27,7 +26,7 @@ A swipe-based travel itinerary planner that lets users discover attractions by s
 1. Clone the repo
 2. Open the project in WebStorm or any IDE
 3. Run using a local development server
-4. Open the local host address in your browser
+4. Open the localhost address in your browser
 
 ## Technologies used
 
