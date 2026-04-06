@@ -2,22 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+
+  <!-- page title shown in the browser tab -->
   <title>TravelSwipe</title>
+
+  <!-- main stylesheet for the whole app -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
+<!-- top bar at the top of the page
+     title on the left and quick buttons on the right -->
 <header class="topbar">
   <h1 id="page-title">TravelSwipe</h1>
+
   <div class="right">
+    <!-- theme toggle button -->
     <button id="btn-theme" class="btn">🌙</button>
+
+    <!-- button that takes user to the map page -->
     <button id="btn-map" class="btn">🗺️ View Map</button>
   </div>
 </header>
 
+
+<!-- first screen the user sees
+     lets them pick a city before the app starts -->
 <section id="city-screen">
   <h2>Select a City</h2>
+
   <div class="city-grid">
+
+    <!-- London tile -->
     <button class="city-tile" data-city="London">
       <img class="tile-bg" src="images/cityCovers/LondonCover.jpg" alt="London" />
       <div class="tile-overlay"></div>
@@ -25,6 +41,8 @@
       <span class="tile-weather">Loading...</span>
       <span class="tile-sub">12 attractions</span>
     </button>
+
+    <!-- New York tile -->
     <button class="city-tile" data-city="New York">
       <img class="tile-bg" src="images/cityCovers/Newyork.jpg" alt="New York" />
       <div class="tile-overlay"></div>
@@ -32,6 +50,8 @@
       <span class="tile-weather">Loading...</span>
       <span class="tile-sub">10 attractions</span>
     </button>
+
+    <!-- Tokyo tile -->
     <button class="city-tile" data-city="Tokyo">
       <img class="tile-bg" src="images/cityCovers/Tokyo.png" alt="Tokyo" />
       <div class="tile-overlay"></div>
@@ -39,6 +59,8 @@
       <span class="tile-weather">Loading...</span>
       <span class="tile-sub">12 attractions</span>
     </button>
+
+    <!-- Krakow tile -->
     <button class="city-tile" data-city="Krakow">
       <img class="tile-bg" src="images/cityCovers/Krakow.jpg" alt="Krakow" />
       <div class="tile-overlay"></div>
@@ -49,19 +71,31 @@
   </div>
 </section>
 
+
+<!-- top controls area
+     hidden at first and only shown after a city is picked -->
 <div class="container" id="controls-wrap" style="display:none;">
   <div id="controls"></div>
 </div>
 
+
+<!-- main app area
+     this is hidden at first and appears after city selection -->
 <main id="app" class="container" style="display:none;">
   <div class="app-grid">
+
+    <!-- left side = swipe card area -->
     <div>
       <div id="card-container"></div>
+
+      <!-- fixed undo button under the card -->
       <div style="display:flex; justify-content:center; margin-top:14px;">
         <button id="btn-undo-fixed" class="btn secondary" style="padding:14px 28px; font-size:1.15rem;">↩️ Undo</button>
       </div>
     </div>
 
+
+    <!-- right side = saved itinerary -->
     <aside class="itinerary-panel">
       <h3>My Itinerary</h3>
       <p class="sub">Swipe right to save places. Use Undo if needed.</p>
@@ -69,67 +103,103 @@
     </aside>
   </div>
 </main>
-<!-- Chat Assistant -->
+
+
+<!-- floating chat button in the bottom corner -->
 <button id="chat-fab" aria-label="Open chat assistant" title="Help">
   💬
 </button>
 
+
+<!-- chat assistant panel
+     starts hidden and opens when the fab button is pressed -->
 <section id="chat-panel" class="chat-panel" aria-label="Chat assistant" style="display:none;">
   <div class="chat-header">
     <div>
       <strong>TravelSwipe Assistant</strong><br />
       <span class="chat-subtitle">Quick help & tips</span>
+
+      <!-- button to show suggested questions -->
       <button id="chat-help" class="chat-help">Suggested questions</button>
     </div>
+
+    <!-- closes the chat panel -->
     <button id="chat-close" class="chat-close" aria-label="Close">✕</button>
   </div>
 
+  <!-- where chat messages appear -->
   <div id="chat-messages" class="chat-messages"></div>
 
+  <!-- suggested question buttons get added here -->
   <div class="chat-suggestions" id="chat-suggestions"></div>
 
+  <!-- text box + send button -->
   <div class="chat-input">
     <input id="chat-text" type="text" placeholder="Ask something…" />
     <button id="chat-send">Send</button>
   </div>
 </section>
 
+
+<!-- tutorial popup shown when entering the swipe screen
+     helps first time users understand the app -->
 <div id="tutorial-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:200; align-items:center; justify-content:center;">
   <div style="text-align:center; max-width:460px; padding:40px 32px; background:#0f172a; border:1px solid rgba(248,250,252,0.15); border-radius:22px;">
     <div style="font-size:3.5rem; margin-bottom:16px;">👈  🃏  👉</div>
+
     <h2 style="font-family:'Playfair Display',serif; font-size:1.8rem; margin-bottom:12px;">How to Use</h2>
+
     <p style="color:rgba(248,250,252,0.75); font-size:1.1rem; line-height:1.6; margin-bottom:8px;">
       <strong style="color:#22c55e;">Swipe right</strong> or click <strong>Like</strong> to save a place.
     </p>
+
     <p style="color:rgba(248,250,252,0.75); font-size:1.1rem; line-height:1.6; margin-bottom:8px;">
       <strong style="color:#ef4444;">Swipe left</strong> or click <strong>Skip</strong> to move on.
     </p>
+
     <p style="color:rgba(248,250,252,0.75); font-size:1.1rem; line-height:1.6; margin-bottom:24px;">
       Use <strong>⭐ Star</strong> to mark your top choices in the itinerary.
     </p>
+
+    <!-- closes tutorial -->
     <button onclick="dismissTutorial()" class="btn" style="padding:16px 40px; font-size:1.2rem;">Got it!</button>
   </div>
 </div>
 
 
+<!-- modal for choosing how many days the trip is -->
 <div id="days-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; display:none; align-items:center; justify-content:center;">
   <div style="background:#0f172a; border:1px solid rgba(248,250,252,0.2); border-radius:16px; padding:28px; text-align:center; min-width:280px;">
     <h3 style="margin:0 0 14px;">How many days is your trip?</h3>
+
+    <!-- input for trip length -->
     <input id="tripDays" type="number" min="1" max="14" value="1"
            style="width:80px; padding:10px; border-radius:10px; border:1px solid #334155; background:#0b1220; color:#f8fafc; text-align:center; font-size:1.1rem; outline:none;" />
+
+    <!-- start or cancel buttons -->
     <div style="margin-top:18px; display:flex; gap:10px; justify-content:center;">
       <button onclick="confirmDaysAndStart()" class="btn">Start</button>
       <button onclick="closeDaysModal()" class="btn secondary">Cancel</button>
     </div>
   </div>
 </div>
+
+
+<!-- firebase libraries -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- local firebase setup file -->
 <script src="firebase.js"></script>
+
+
 <script>
-  // fetches weather for each city and shows it on the tiles
+  // this bit fetches weather for each city tile
+  // so user can see current conditions before picking a city
+
   const WEATHER_API_KEY = "4a3a219bade3cbf2bfba973137944691";
 
+  // lat lon values for each city
   const cityCoords = {
     London: { lat: 51.5074, lon: -0.1278 },
     "New York": { lat: 40.7128, lon: -74.0060 },
@@ -140,24 +210,32 @@
   async function loadWeather() {
     for (const [city, coords] of Object.entries(cityCoords)) {
       try {
+        // build weather api url for current city
         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lon}&units=metric&appid=${WEATHER_API_KEY}`;
         const res = await fetch(url);
         const data = await res.json();
 
+        // pull out temp and weather icon
         const temp = Math.round(data.main.temp);
         const icon = data.weather[0].icon;
         const desc = data.weather[0].main;
         const iconUrl = `https://openweathermap.org/img/wn/${icon}.png`;
 
+        // find matching tile on the page
         const tile = document.querySelector(`.city-tile[data-city="${city}"]`);
         if (!tile) continue;
 
         const weatherEl = tile.querySelector(".tile-weather");
+
+        // update tile with icon + temp
         if (weatherEl) {
           weatherEl.innerHTML = `<img src="${iconUrl}" alt="${desc}" style="width:32px; height:32px; vertical-align:middle;"> ${temp}°C`;
         }
       } catch (err) {
+        // if weather fails dont break the page
+        // just remove the loading text
         console.log("Weather fetch failed for " + city, err);
+
         const tile = document.querySelector(`.city-tile[data-city="${city}"]`);
         if (tile) {
           const weatherEl = tile.querySelector(".tile-weather");
@@ -167,8 +245,15 @@
     }
   }
 
+
   loadWeather();
 </script>
+
+
+<!-- city and attraction data -->
 <script src="travel-data.js"></script>
+
+<!-- main app logic -->
 <script src="main.js"></script>
 </body>
+</html>
