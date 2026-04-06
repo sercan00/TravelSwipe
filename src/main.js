@@ -1,4 +1,5 @@
-// this file runs the main swipe page, handles city selection, swiping, filters, itinerary and the chat
+// this file runs the main swipe page
+// handles city pick, swiping, filters, saved itinerary, chat, tutorial and theme
 
 let swipeHistory = [];
 let currentIndex = 0;
@@ -12,6 +13,9 @@ let selectedCategory = "All";
 
 const imageCache = new Map();
 
+
+// preloads one image and stores it in a cache
+// this helps cards load faster when the user swipes
 function preloadImage(url) {
   if (!url) return Promise.resolve(false);
   if (imageCache.has(url)) return imageCache.get(url);
@@ -35,10 +39,12 @@ function preloadImage(url) {
   imageCache.set(url, p);
   return p;
 }
+
 let pendingCity = null;
 let tripDays = 1;
 
 
+// preloads a few cards ahead so next places feel instant
 function preloadUpcomingImages(list, startIndex, count = 6) {
   const tasks = [];
   for (let i = 0; i < count; i++) {
@@ -48,6 +54,9 @@ function preloadUpcomingImages(list, startIndex, count = 6) {
   return Promise.all(tasks);
 }
 
+
+// loads the current swipe card into the page
+// if there are no more cards it shows the end card instead
 async function loadCard() {
   const container = document.getElementById("card-container");
   const currentPlace = filteredAttractions[currentIndex];
@@ -68,7 +77,7 @@ async function loadCard() {
     if (endUndo) endUndo.onclick = () => undoLastSwipe();
 
 
-    // add undo button outside the swipe card
+    // puts an undo button under the card area on the end screen
     let undoWrap = document.getElementById("undo-wrap");
     if (!undoWrap) {
       undoWrap = document.createElement("div");
@@ -113,10 +122,15 @@ async function loadCard() {
   }
 
 
+  // adds swipe logic to the newly created card
   attachSwipeHandlers();
 
   preloadUpcomingImages(filteredAttractions, currentIndex + 1, 20);
 }
+
+
+// starts the app after a city is picked
+// resets state and swaps from city screen to swipe screen
 function startCity(cityName) {
   selectedCity = cityName;
   attractions = cityData[cityName] || [];
@@ -163,6 +177,10 @@ function startCity(cityName) {
   }
   showTutorialIfNeeded();
 }
+
+
+// takes the user back to the city selection screen
+// clears current swipe state as well
 function goBackToCitySelection() {
   // reset state
   selectedCity = null;
@@ -198,16 +216,24 @@ function goBackToCitySelection() {
     });
   }, 300);
 }
+
+
+// old city button setup
+// kept here in case normal city buttons are used instead of tiles
 function renderCityButtons() {
   document.querySelectorAll(".city-btn").forEach((btn) => {
     btn.addEventListener("click", () => openDaysModal(btn.dataset.city));
   });
 }
 
+
+// builds the category list for the dropdown
 function getUniqueCategories() {
   return ["All", ...new Set(attractions.map((a) => a.category))];
 }
 
+
+// creates the category filter UI
 function renderFilterUI() {
   const controls = document.getElementById("controls");
   const categories = getUniqueCategories();
@@ -236,6 +262,8 @@ function renderFilterUI() {
   select.disabled = attractions.length === 0;
 }
 
+
+// applies selected filter and reloads card stack
 function applyFilter() {
   filteredAttractions =
     selectedCategory === "All"
@@ -249,6 +277,9 @@ function applyFilter() {
   loadCard();
 }
 
+
+// handles what happens after a swipe
+// right = save place   left = skip place
 function handleSwipe(direction) {
   const place = filteredAttractions[currentIndex];
   if (!place) return;
@@ -269,10 +300,15 @@ function handleSwipe(direction) {
   loadCard();
 }
 
+
+// user gets 1 priority star for every 3 liked places
 function getMaxPriorities() {
   return Math.floor(likedAttractions.length / 3) || 0;
 }
 
+
+// redraws the itinerary list on the right side
+// includes stars badges and remove buttons
 function updateItineraryDisplay() {
   const list = document.getElementById("itinerary-list");
   list.innerHTML = "";
@@ -342,6 +378,8 @@ function updateItineraryDisplay() {
   });
 }
 
+
+// adds drag/swipe behaviour to the current card
 function attachSwipeHandlers() {
   const card = document.getElementById("swipe-card");
   if (!card) return;
@@ -379,7 +417,7 @@ function attachSwipeHandlers() {
     const rotate = dx * 0.05;
     card.style.transform = `translate(${dx}px, ${dy * 0.2}px) rotate(${rotate}deg)`;
 
-    // Colour tint and overlay feedback
+    // live swipe feedback while dragging
     const progress = Math.min(Math.abs(dx) / SWIPE_THRESHOLD, 1);
     const likeOverlay = document.getElementById("overlay-like");
     const skipOverlay = document.getElementById("overlay-skip");
@@ -431,6 +469,8 @@ function attachSwipeHandlers() {
   card.addEventListener("pointercancel", endDrag);
 }
 
+
+// undoes the last swipe action
 function undoLastSwipe() {
   if (swipeHistory.length === 0) return;
 
@@ -446,6 +486,9 @@ function undoLastSwipe() {
   loadCard();
 }
 
+
+// saves current selected city and itinerary locally
+// and also syncs to firebase if available
 function saveItinerary() {
   localStorage.setItem("selectedCity", selectedCity ?? "");
   localStorage.setItem("likedAttractions", JSON.stringify(likedAttractions));
@@ -455,6 +498,8 @@ function saveItinerary() {
   }
 }
 
+
+// helper to read liked attractions from storage
 function loadItinerary() {
   try {
     return JSON.parse(localStorage.getItem("likedAttractions") || "[]");
@@ -463,6 +508,9 @@ function loadItinerary() {
   }
 }
 
+
+// used when the user clicks a place from the map popup
+// jumps back to the matching attraction card
 function jumpToAttractionIfRequested() {
   const jumpIdRaw = localStorage.getItem("jumpToAttractionId");
   if (!jumpIdRaw) return;
@@ -482,6 +530,8 @@ function jumpToAttractionIfRequested() {
   localStorage.removeItem("jumpToAttractionId");
 }
 
+
+// opens the trip days modal before starting a city
 function openDaysModal(cityName){
   pendingCity = cityName;
 
@@ -494,12 +544,16 @@ function openDaysModal(cityName){
   modal.style.display = "flex";
 }
 
+
+// closes the trip days modal
 function closeDaysModal(){
   const modal = document.getElementById("days-modal");
   modal.style.display = "none";
   pendingCity = null;
 }
 
+
+// confirms day count and starts the selected city
 function confirmDaysAndStart(){
   const input = document.getElementById("tripDays");
   const days = Math.max(1, Math.min(14, Number(input.value || 1)));
@@ -511,11 +565,13 @@ function confirmDaysAndStart(){
   closeDaysModal();
 }
 
+
+// fixed undo button under the card
 const undoFixed = document.getElementById("btn-undo-fixed");
 if (undoFixed) undoFixed.onclick = () => undoLastSwipe();
 
 
-//Chat Assistant
+// chat assistant setup for the main page
 function initChatAssistant(){
   const fab = document.getElementById("chat-fab");
   const panel = document.getElementById("chat-panel");
@@ -525,6 +581,7 @@ function initChatAssistant(){
   const sendBtn = document.getElementById("chat-send");
   const suggEl = document.getElementById("chat-suggestions");
   const helpBtn = document.getElementById("chat-help");
+
   if (helpBtn){
     helpBtn.onclick = () => {
       suggEl.style.display = (suggEl.style.display === "none") ? "flex" : "none";
@@ -533,6 +590,7 @@ function initChatAssistant(){
 
   if (!fab || !panel || !messagesEl || !inputEl || !sendBtn || !suggEl || !closeBtn) return;
 
+  // predefined questions and answers for the chatbot
   const QA = [
     { q: "How do I swipe?", keywords: ["swipe","like","dislike","left","right"], a: "Swipe right to like a place and add it to your itinerary. Swipe left to skip. You can also use Undo if you make a mistake." },
     { q: "How do I change city?", keywords: ["city","change city","switch city","back"], a: "Click the page title (TravelSwipe: Explore …) to go back to the city selection screen, then choose another city." },
@@ -558,7 +616,10 @@ function initChatAssistant(){
     { q: "How does the timeline work?", keywords: ["timeline","schedule","day schedule","panel","side"], a: "The timeline panel on the map page shows your stops in order for the selected day, with the distance and estimated travel time between each one." },
   ];
 
+  // default question chips shown in chat
   const DEFAULT_SUGGESTIONS = ["How do I swipe?","What are the priority stars?","How do I plan multiple days?","How does the timeline work?"];
+
+  // adds a message bubble into the chat window
   function addBubble(text, who){
     const div = document.createElement("div");
     div.className = "chat-bubble " + who;
@@ -567,25 +628,32 @@ function initChatAssistant(){
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
+  // finds the best answer for what the user typed
   function bestAnswer(userText){
     const t = (userText || "").toLowerCase();
     const liked = JSON.parse(localStorage.getItem("likedAttractions") || "[]");
     const city = localStorage.getItem("selectedCity") || "this city";
+
     if (t.includes("saved") || t.includes("how many") || t.includes("places")) {
       return "You currently have " + liked.length + " saved places in " + city + ". Open the map to generate your itinerary.";
     }
+
     const exact = QA.find(x => x.q.toLowerCase() === t);
     if (exact) return exact.a;
+
     let best = null, bestScore = 0;
     for (const item of QA){
       let score = 0;
       for (const kw of item.keywords){ if (t.includes(kw)) score++; }
       if (score > bestScore){ bestScore = score; best = item; }
     }
+
     if (best && bestScore >= 1) return best.a;
+
     return "I can help with swiping, filters, map days, start point, and walking/car mode. Try one of the suggested questions below.";
   }
 
+  // shows the suggested question buttons
   function renderSuggestions(){
     suggEl.innerHTML = "";
     DEFAULT_SUGGESTIONS.forEach((label) => {
@@ -597,6 +665,7 @@ function initChatAssistant(){
     });
   }
 
+  // opens the chat panel
   function openChat(){
     panel.style.display = "flex";
     renderSuggestions();
@@ -604,8 +673,10 @@ function initChatAssistant(){
     inputEl.focus();
   }
 
+  // closes the chat panel
   function closeChat(){ panel.style.display = "none"; }
 
+  // sends user message and bot reply
   function send(){
     const text = inputEl.value.trim();
     if (!text) return;
@@ -618,19 +689,25 @@ function initChatAssistant(){
     if (panel.style.display === "none" || !panel.style.display) openChat();
     else closeChat();
   });
+
   closeBtn.addEventListener("click", closeChat);
   sendBtn.addEventListener("click", send);
+
   inputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") send();
     if (e.key === "Escape") closeChat();
   });
 }
 
+
+// shows the tutorial overlay
 function showTutorialIfNeeded() {
   const overlay = document.getElementById("tutorial-overlay");
   if (overlay) overlay.style.display = "flex";
 }
 
+
+// hides the tutorial overlay
 function dismissTutorial() {
   const overlay = document.getElementById("tutorial-overlay");
   if (overlay) overlay.style.display = "none";
@@ -639,6 +716,8 @@ function dismissTutorial() {
 
 
 
+// app startup
+// restores session, wires main buttons and starts chat
 window.onload = async () => {
   console.log("[TravelSwipe] boot ✅");
 
@@ -674,7 +753,7 @@ window.onload = async () => {
 
 
 
-
+// applies dark or light theme and updates icon
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("theme", theme);
@@ -682,9 +761,13 @@ function applyTheme(theme) {
   if (btn) btn.textContent = theme === "light" ? "☀️" : "🌙";
 }
 
+
+// load saved theme when script starts
 const savedTheme = localStorage.getItem("theme") || "dark";
 applyTheme(savedTheme);
 
+
+// theme toggle button listener
 const themeBtn = document.getElementById("btn-theme");
 if (themeBtn) {
   themeBtn.addEventListener("click", () => {
@@ -692,3 +775,27 @@ if (themeBtn) {
     applyTheme(current === "dark" ? "light" : "dark");
   });
 }
+
+
+
+/*
+========================================
+main.js content order
+========================================
+
+1. global state variables
+2. image preloading helpers
+3. card loading and end screen
+4. city start and return to city screen
+5. category filter setup
+6. swipe handling logic
+7. itinerary display and priority stars
+8. undo and storage helpers
+9. jump back from map to a specific attraction
+10. trip days modal
+11. chat assistant
+12. tutorial open / close
+13. page startup
+14. theme setup and toggle
+
+*/
