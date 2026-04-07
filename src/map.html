@@ -1,18 +1,26 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+
+  <!-- browser tab title for the map page -->
   <title>TravelSwipe - Map</title>
+
+  <!-- main shared stylesheet -->
   <link rel="stylesheet" href="style.css" />
 
+  <!-- leaflet map css + js -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
+      /* main map box */
       #map {
           height: 100%;
       }
 
+      /* top control bars on the map page */
       .mapbar{
           display:flex;
           align-items:center;
@@ -22,6 +30,7 @@
           flex-wrap: wrap;
       }
 
+      /* left side items inside each mapbar */
       .mapbar .left{
           display:flex;
           align-items:center;
@@ -29,6 +38,7 @@
           flex-wrap: wrap;
       }
 
+      /* shared look for top links and buttons */
       .mapbar a, .mapbar button{
           padding: 18px 28px;
           border-radius: 16px;
@@ -44,18 +54,21 @@
           transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
       }
 
+      /* small hover animation */
       .mapbar a:hover, .mapbar button:hover{
           background:#1b2a4a;
           transform: translateY(-2px);
           box-shadow: 0 8px 24px rgba(0,0,0,0.3);
       }
 
+      /* text that shows city and route summary */
       .meta{
           font-size: 1.15rem;
           font-weight: 600;
           opacity: 0.85;
       }
 
+      /* day count input */
       #days-input{
           width: 100px;
           padding: 18px 16px;
@@ -69,6 +82,7 @@
           text-align: center;
       }
 
+      /* walking / driving dropdown */
       #travel-mode{
           padding: 18px 16px;
           border-radius: 16px;
@@ -81,32 +95,39 @@
           cursor: pointer;
       }
 
+      /* small labels like Mode and Days */
       .label{
           font-size: 1.2rem;
           font-weight: 700;
           opacity: 0.85;
       }
 
+      /* buttons for each trip day */
       .day-btn{
           font-size: 1.2rem !important;
           padding: 18px 28px !important;
       }
 
+      /* active selected day button */
       .day-btn.active{
           background:#1b2a4a;
           border-color: rgba(59,130,246,0.35);
           box-shadow: 0 0 0 1px rgba(59,130,246,0.15);
       }
 
+      /* match heading font to rest of the app */
       .topbar h1{
           font-family: 'Playfair Display', serif;
       }
 
+      /* timeline item layout */
       .tl-item{
           display: flex;
           gap: 14px;
           align-items: flex-start;
       }
+
+      /* timeline left line section */
       .tl-line{
           display: flex;
           flex-direction: column;
@@ -114,6 +135,8 @@
           width: 24px;
           flex-shrink: 0;
       }
+
+      /* normal stop dot */
       .tl-dot{
           width: 14px;
           height: 14px;
@@ -122,32 +145,45 @@
           border: 2px solid #60a5fa;
           flex-shrink: 0;
       }
+
+      /* green start point dot */
       .tl-dot.start{
           background: #22c55e;
           border-color: #4ade80;
       }
+
+      /* yellow priority place dot */
       .tl-dot.priority{
           background: #eab308;
           border-color: #facc15;
       }
+
+      /* line between timeline dots */
       .tl-connector{
           width: 2px;
           flex: 1;
           min-height: 30px;
           background: rgba(248,250,252,0.15);
       }
+
       .tl-info{
           padding-bottom: 8px;
       }
+
+      /* main place name in timeline */
       .tl-name{
           font-size: 1.05rem;
           font-weight: 600;
           color: #f8fafc;
       }
+
+      /* category text under place name */
       .tl-cat{
           font-size: 0.85rem;
           color: rgba(248,250,252,0.5);
       }
+
+      /* little distance/time row between stops */
       .tl-walk{
           display: flex;
           align-items: center;
@@ -155,16 +191,20 @@
           padding: 6px 0 6px 0;
           margin-left: 11px;
       }
+
       .tl-walk-line{
           width: 2px;
           height: 24px;
           background: rgba(248,250,252,0.1);
       }
+
       .tl-walk-text{
           font-size: 0.85rem;
           color: rgba(248,250,252,0.4);
           font-style: italic;
       }
+
+      /* total route summary at bottom of timeline */
       .tl-total{
           margin-top: 16px;
           padding: 14px;
@@ -176,21 +216,24 @@
           color: rgba(248,250,252,0.75);
           text-align: center;
       }
+
+      /* small scrollbar styling for the timeline */
       #timeline-panel::-webkit-scrollbar{ width: 4px; }
       #timeline-panel::-webkit-scrollbar-thumb{ background: rgba(248,250,252,0.15); border-radius:99px; }
 
+      /* hide timeline on smaller screens */
       @media (max-width: 900px){
           #timeline-panel{ display: none; }
       }
-
-
-
   </style>
 </head>
 <body>
 
+<!-- top bar for map page title + theme toggle -->
 <header class="topbar">
   <h1>Itinerary Map</h1>
+
+  <!-- inline theme toggle just for this page -->
   <button id="btn-theme" onclick="
     const current = localStorage.getItem('theme') || 'dark';
     const next = current === 'dark' ? 'light' : 'dark';
@@ -200,6 +243,7 @@
   " style="padding:12px 16px; border-radius:14px; border:1px solid rgba(248,250,252,0.18); background:#111c32; color:#f8fafc; cursor:pointer; font-size:1.1rem;">🌙</button>
 </header>
 
+<!-- first top bar with nav and map actions -->
 <div class="mapbar">
   <div class="left">
     <a href="index.html">← Back</a>
@@ -208,25 +252,35 @@
     <button id="btn-set-start" title="Click this then click anywhere on the map to set your starting point (e.g. your hotel)">Set Start</button>
     <button id="btn-clear-start" title="Removes your custom starting point">Clear Start</button>
   </div>
+
+  <!-- route summary text -->
   <div class="meta" id="meta"></div>
 </div>
 
+<!-- second top bar with day tabs + mode/day controls -->
 <div class="mapbar" style="padding-top:0;">
   <div class="left" id="daybar"></div>
+
   <div class="left">
     <span class="label">Mode</span>
+
     <select id="travel-mode">
       <option value="walking">🚶 Walking</option>
       <option value="driving">🚗 Driving</option>
     </select>
+
     <span class="label" style="margin-left:12px;">Days</span>
     <input id="days-input" type="number" min="1" max="14" />
     <button id="btn-apply-days">Apply</button>
   </div>
 </div>
 
+<!-- main map + timeline split layout -->
 <div style="display:flex; gap:0; height:78vh; margin:18px;">
+  <!-- interactive leaflet map -->
   <div id="map" style="flex:1; border-radius:18px 0 0 18px; overflow:hidden; border:1px solid rgba(248,250,252,0.15); border-right:none;"></div>
+
+  <!-- right side schedule panel -->
   <div id="timeline-panel" style="width:340px; background:rgba(15,23,42,0.85); border:1px solid rgba(248,250,252,0.15); border-radius:0 18px 18px 0; overflow-y:auto; padding:20px 16px;">
     <h3 style="font-family:'Playfair Display',serif; font-size:1.3rem; margin:0 0 16px;">Day Schedule</h3>
     <div id="timeline-content"></div>
@@ -234,11 +288,12 @@
 </div>
 
 
-<!-- Chat Assistant -->
+<!-- floating chat button -->
 <button id="chat-fab" aria-label="Open chat assistant" title="Help">
   💬
 </button>
 
+<!-- map page chat assistant -->
 <section id="chat-panel" class="chat-panel" aria-label="Chat assistant" style="display:none;">
   <div class="chat-header">
     <div>
@@ -246,6 +301,7 @@
       <span class="chat-subtitle">Map help & tips</span>
       <button id="chat-help" class="chat-help">Suggested questions</button>
     </div>
+
     <button id="chat-close" class="chat-close" aria-label="Close">✕</button>
   </div>
 
@@ -259,15 +315,21 @@
 </section>
 
 
+<!-- firebase + local files -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase.js"></script>
 <script src="travel-data.js"></script>
 
 <script>
+  // currently selected city from storage
   const selectedCity = localStorage.getItem("selectedCity") || "London";
+
+  // top meta text element
   const metaEl = document.getElementById("meta");
 
+
+  // reads liked attractions from storage
   function readLikedAttractions() {
     try {
       return JSON.parse(localStorage.getItem("likedAttractions") || "[]");
@@ -279,6 +341,8 @@
   let liked = [];
   let points = [];
 
+
+  // refreshes local arrays from storage and keeps only valid map points
   function refreshStoredPoints() {
     liked = readLikedAttractions();
 
@@ -296,6 +360,8 @@
 
   refreshStoredPoints();
 
+
+  // default map centers for each city
   const fallbackCenter = {
     London: [51.5074, -0.1278],
     "New York": [40.7128, -74.0060],
@@ -304,14 +370,18 @@
   };
 
   const center = fallbackCenter[selectedCity] || [51.5074, -0.1278];
+
+  // create leaflet map
   const map = L.map("map").setView(center, 12);
 
+  // openstreetmap tile layer
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
     attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
 
 
+  // number of trip days from storage
   let tripDays = Number(localStorage.getItem("tripDays") || "1");
   if (!Number.isFinite(tripDays) || tripDays < 1) tripDays = 1;
   tripDays = Math.min(14, tripDays);
@@ -319,6 +389,7 @@
   const daysInput = document.getElementById("days-input");
   daysInput.value = String(tripDays);
 
+  // main working state for map page
   let activeDay = 1;
   let dayPlan = [];
   let markersLayer = L.layerGroup().addTo(map);
@@ -328,12 +399,15 @@
   const startKey = `startPoint:${selectedCity}`;
 
   // ----- Helpers -----
+
+  // simple distance helper used by algorithms
   function euclid(a, b){
     const dx = a.lng - b.lng;
     const dy = a.lat - b.lat;
     return Math.sqrt(dx*dx + dy*dy);
   }
 
+  // loads saved custom start point for current city
   function loadStartPoint() {
     try {
       const raw = localStorage.getItem(startKey);
@@ -346,10 +420,12 @@
     }
   }
 
+  // saves custom start point
   function saveStartPoint(latlng) {
     localStorage.setItem(startKey, JSON.stringify({ lat: latlng.lat, lng: latlng.lng }));
   }
 
+  // clears custom start point
   function clearStartPoint() {
     localStorage.removeItem(startKey);
     if (startMarker) {
@@ -358,6 +434,7 @@
     }
   }
 
+  // creates or moves the draggable start marker
   function setStartMarker(latlng) {
     if (!startMarker) {
       startMarker = L.marker([latlng.lat, latlng.lng], { draggable: true }).addTo(map);
@@ -375,7 +452,7 @@
     saveStartPoint(latlng);
   }
 
-  // Day clustering
+  // groups attractions into nearby day clusters
   function clusterByCloseness(pts, k) {
     if (!pts || pts.length === 0) return [];
     k = Math.max(1, Math.min(k, pts.length));
@@ -416,7 +493,7 @@
       for (let i = 0; i < clusters.length; i++) {
         if (clusters[i].length <= maxSize) continue;
 
-        // this cluster is too big, find the point furthest from its centroid
+        // this cluster is too big find the point furthest from its centre
         const cent = centroidOf(clusters[i]);
         let worstIdx = 0;
         let worstD = 0;
@@ -425,7 +502,7 @@
           if (d > worstD) { worstD = d; worstIdx = p; }
         }
 
-        // find the nearest cluster that has room
+        // find the nearest cluster that still has room
         const point = clusters[i][worstIdx];
         let bestTarget = -1;
         let bestTargetD = Infinity;
@@ -444,7 +521,7 @@
       }
     }
 
-    // final optimisation, swap points between clusters if it reduces total spread
+    // final improvement step swaps points if it makes both groups tighter
     for (let pass = 0; pass < 10; pass++) {
       let swapped = false;
       for (let i = 0; i < clusters.length; i++) {
@@ -477,6 +554,7 @@
     }));
   }
 
+  // finds the centre of a cluster
   function centroidOf(list) {
     const n = list.length || 1;
     const lat = list.reduce((s, p) => s + p.lat, 0) / n;
@@ -484,6 +562,7 @@
     return { lat, lng };
   }
 
+  // chooses a sensible start point within a group
   function pickStartClosestToCentroid(list){
     if (!list || list.length === 0) return null;
     const c = centroidOf(list);
@@ -496,6 +575,7 @@
     return best;
   }
 
+  // basic nearest neighbour route order
   function nearestNeighborOrder(list){
     if (!list || list.length <= 2) return (list || []).slice();
 
@@ -520,6 +600,7 @@
     return ordered;
   }
 
+  // total route length helper
   function routeLength(list){
     let sum = 0;
     for (let i = 0; i < list.length - 1; i++){
@@ -528,6 +609,7 @@
     return sum;
   }
 
+  // improves a route by removing bad crossings
   function twoOptImprove(route, maxPasses = 8){
     const r = route.slice();
     if (r.length < 4) return r;
@@ -559,12 +641,14 @@
     return r;
   }
 
+  // gets best route order without a custom start point
   function getOptimizedVisitOrder(list){
     const nn = nearestNeighborOrder(list);
     const improved = twoOptImprove(nn);
     return routeLength(improved) <= routeLength(nn) ? improved : nn;
   }
 
+  // gets best route order when user sets a start point
   function getOptimizedVisitOrderFromStart(list, startLatLng) {
     if (!startLatLng) return getOptimizedVisitOrder(list);
 
@@ -590,6 +674,7 @@
       return ordered;
     })();
 
+    // 2-opt version that keeps the start point fixed
     const improved = (function twoOptFixedStart(route, maxPasses = 8) {
       const r = route.slice();
       if (r.length < 5) return r;
@@ -623,12 +708,14 @@
     return improved;
   }
 
+  // clears markers and existing route from the map
   function clearMap(){
     markersLayer.clearLayers();
     if (routeLine) map.removeLayer(routeLine);
     routeLine = null;
   }
 
+  // zooms map so all current places are visible
   function fitToList(list){
     if (!list || list.length === 0) return;
 
@@ -640,6 +727,7 @@
     map.fitBounds(L.latLngBounds(b), { padding: [40, 40] });
   }
 
+  // asks OSRM for a route and draws it on the map
   async function drawRouteForList(list){
     const start = loadStartPoint();
     const totalPoints = (list ? list.length : 0) + (start ? 1 : 0);
@@ -674,6 +762,7 @@
     }
   }
 
+  // draws one specific day on the map
   function drawDay(dayNumber){
     clearMap();
 
@@ -683,6 +772,7 @@
       return;
     }
 
+    // add marker and popup for each place
     dayObj.places.forEach((p, i) => {
       const marker = L.marker([p.lat, p.lng]).addTo(markersLayer);
       const safeId = encodeURIComponent(p.id);
@@ -701,6 +791,7 @@
         const link = document.querySelector('.open-in-app[data-id="' + safeId + '"]');
         if (!link) return;
 
+        // sends user back to same place on main page
         link.addEventListener("click", () => {
           localStorage.setItem("jumpToAttractionId", String(p.id));
           localStorage.setItem("selectedCity", selectedCity);
@@ -713,6 +804,7 @@
     renderTimeline(dayNumber);
   }
 
+  // rebuilds day tabs at the top
   function renderDayBar(){
     const daybar = document.getElementById("daybar");
     daybar.innerHTML = "";
@@ -740,13 +832,14 @@
   }
 
 
+  // apply saved theme on map page
   const savedTheme = localStorage.getItem("theme") || "dark";
   document.documentElement.setAttribute("data-theme", savedTheme);
   const themeToggle = document.getElementById("btn-theme");
   if (themeToggle) themeToggle.textContent = savedTheme === "light" ? "☀️" : "🌙";
 
 
-  // builds the timeline panel for a given day
+  // builds the timeline panel for the active day
   async function renderTimeline(dayNumber) {
     const container = document.getElementById("timeline-content");
     if (!container) return;
@@ -761,7 +854,7 @@
     const start = loadStartPoint();
     const ordered = getOptimizedVisitOrderFromStart(dayObj.places, start);
 
-    // get distances between consecutive stops
+    // get rough distances between consecutive stops
     const distances = [];
     for (let i = 0; i < ordered.length - 1; i++) {
       const a = ordered[i];
@@ -815,6 +908,7 @@
   }
 
 
+  // rebuilds the full plan after changes to days or data
   function rebuildPlan(){
     refreshStoredPoints();
     dayPlan = clusterByCloseness(points, tripDays);
@@ -832,11 +926,14 @@
   }
 
   // ----- Buttons -----
+
+  // zoom to current day's places
   document.getElementById("btn-fit").onclick = () => {
     const dayObj = dayPlan.find(d => d.day === activeDay);
     if (dayObj) fitToList(dayObj.places);
   };
 
+  // clear itinerary completely
   document.getElementById("btn-clear").onclick = () => {
     localStorage.setItem("likedAttractions", "[]");
     if (window.TravelSwipeDB) {
@@ -845,6 +942,7 @@
     window.location.reload();
   };
 
+  // apply new day count and rebuild the plan
   document.getElementById("btn-apply-days").onclick = () => {
     const v = Math.max(1, Math.min(14, Number(daysInput.value || 1)));
     tripDays = v;
@@ -856,10 +954,12 @@
     }
   };
 
+  // restore saved walking/driving mode
   const travelModeSelect = document.getElementById("travel-mode");
   const savedMode = localStorage.getItem("travelMode") || "walking";
   travelModeSelect.value = savedMode;
 
+  // recalc route when mode changes
   travelModeSelect.addEventListener("change", () => {
     localStorage.setItem("travelMode", travelModeSelect.value);
     if (window.TravelSwipeDB) window.TravelSwipeDB.saveCurrentSession();
@@ -867,21 +967,25 @@
   });
 
 
+  // initial build when page loads
   rebuildPlan();
 
   if (points.length === 0) {
     alert("No saved places with coordinates yet. Like some attractions first.");
   }
 
+  // restore saved start point if one exists
   const savedStart = loadStartPoint();
   if (savedStart) setStartMarker(savedStart);
 
+  // helper popup for setting start point
   const startMsg = document.createElement("div");
   startMsg.id = "start-msg";
   startMsg.style.cssText = "display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0f172a; border:1px solid rgba(248,250,252,0.2); border-radius:18px; padding:28px 36px; text-align:center; z-index:300; box-shadow:0 20px 60px rgba(0,0,0,0.5);";
   startMsg.innerHTML = '<p style="font-size:1.2rem; font-weight:600; margin:0 0 8px;">Click anywhere on the map</p><p style="opacity:0.6; margin:0 0 16px;">This will set your starting point (e.g. your hotel)</p><button onclick="document.getElementById(\'start-msg\').style.display=\'none\'" style="padding:12px 28px; border-radius:12px; border:1px solid rgba(248,250,252,0.18); background:#111c32; color:#f8fafc; cursor:pointer; font-size:1rem;">Got it</button>';
   document.body.appendChild(startMsg);
 
+  // button that toggles placing start point mode
   document.getElementById("btn-set-start").onclick = () => {
     isPlacingStart = !isPlacingStart;
     const btn = document.getElementById("btn-set-start");
@@ -906,11 +1010,14 @@
       btn.style.background = "";
     }
   };
+
+  // clear custom start point
   document.getElementById("btn-clear-start").onclick = () => {
     clearStartPoint();
     drawDay(activeDay);
   };
 
+  // place start marker when map is clicked in placing mode
   map.on("click", (e) => {
     if (!isPlacingStart) return;
     setStartMarker(e.latlng);
@@ -935,6 +1042,7 @@
 
     if (!fab || !panel || !messagesEl || !inputEl || !sendBtn || !suggEl || !closeBtn) return;
 
+    // map-specific faq data
     const QA = [
       {
         q: "What does Set Start do?",
@@ -980,6 +1088,7 @@
       "How is the route calculated?"
     ];
 
+    // adds chat bubble to the map chat
     function addBubble(text, who){
       const div = document.createElement("div");
       div.className = "chat-bubble " + who;
@@ -988,6 +1097,7 @@
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
+    // keyword matching for map chat answers
     function bestAnswer(userText){
       const t = (userText || "").toLowerCase();
 
@@ -1008,6 +1118,7 @@
       return "I can help with start points, multi-day plans, route modes, and clearing your itinerary. Try one of the suggested questions.";
     }
 
+    // builds suggested question chips
     function renderSuggestions(){
       suggEl.innerHTML = "";
       DEFAULT_SUGGESTIONS.forEach((label) => {
@@ -1023,6 +1134,7 @@
       });
     }
 
+    // opens chat
     function openChat(){
       panel.style.display = "flex";
       renderSuggestions();
@@ -1032,8 +1144,10 @@
       inputEl.focus();
     }
 
+    // closes chat
     function closeChat(){ panel.style.display = "none"; }
 
+    // sends user text and bot reply
     function send(){
       const text = inputEl.value.trim();
       if (!text) return;
@@ -1049,6 +1163,7 @@
 
     closeBtn.addEventListener("click", closeChat);
     sendBtn.addEventListener("click", send);
+
     inputEl.addEventListener("keydown", (e) => {
       if (e.key === "Enter") send();
       if (e.key === "Escape") closeChat();
@@ -1065,3 +1180,31 @@
 
 </body>
 </html>
+
+<!--
+========================================
+map.html content order
+========================================
+
+1. page head and leaflet imports
+2. inline map page styling
+3. top bars and controls
+4. map + timeline layout
+5. map chat assistant html
+6. firebase and local script imports
+7. stored city and liked attraction loading
+8. leaflet map setup
+9. trip day state
+10. helper functions for distance and start point
+11. clustering algorithm
+12. route ordering and 2-opt optimisation
+13. map drawing helpers
+14. day rendering and day tab buttons
+15. timeline rendering
+16. rebuild logic
+17. button handlers for fit clear apply and mode
+18. start point placement popup and logic
+19. map page chatbot
+
+-->
+```
