@@ -1181,30 +1181,125 @@
 </body>
 </html>
 
+
+
 <!--
 ========================================
 map.html content order
 ========================================
 
 1. page head and leaflet imports
+   - html head
+   - leaflet css and js imports
+
 2. inline map page styling
+   - styles inside <style>...</style>
+
 3. top bars and controls
+   - topbar
+   - mapbar
+   - btn-clear
+   - btn-fit
+   - btn-set-start
+   - btn-clear-start
+   - travel-mode
+   - days-input
+   - btn-apply-days
+
 4. map + timeline layout
+   - #map
+   - #timeline-panel
+   - #timeline-content
+
 5. map chat assistant html
+   - #chat-fab
+   - #chat-panel
+   - #chat-messages
+   - #chat-suggestions
+   - #chat-text
+   - #chat-send
+
 6. firebase and local script imports
+   - firebase-app-compat
+   - firebase-firestore-compat
+   - firebase.js
+   - travel-data.js
+
 7. stored city and liked attraction loading
+   - selectedCity
+   - metaEl
+   - readLikedAttractions()
+   - refreshStoredPoints()
+
 8. leaflet map setup
+   - fallbackCenter
+   - map
+   - L.tileLayer(...)
+
 9. trip day state
+   - tripDays
+   - daysInput
+   - activeDay
+   - dayPlan
+   - markersLayer
+   - routeLine
+   - startMarker
+   - isPlacingStart
+   - startKey
+
 10. helper functions for distance and start point
+   - euclid() = basic distance helper
+   - loadStartPoint() = reads saved start point
+   - saveStartPoint() = saves start point
+   - clearStartPoint() = removes start point
+   - setStartMarker() = creates or updates draggable start marker
+
 11. clustering algorithm
+   - clusterByCloseness() = groups attractions into days
+   - centroidOf() = finds cluster centre
+
 12. route ordering and 2-opt optimisation
+   - pickStartClosestToCentroid() = picks a sensible first stop
+   - nearestNeighborOrder() = builds first route
+   - routeLength() = measures route distance
+   - twoOptImprove() = improves route by reducing bad turns
+   - getOptimizedVisitOrder() = returns best route without custom start
+   - getOptimizedVisitOrderFromStart() = returns best route with custom start
+
 13. map drawing helpers
+   - clearMap() = clears markers and route line
+   - fitToList() = zooms map to all points
+   - drawRouteForList() = fetches and draws OSRM route
+
 14. day rendering and day tab buttons
+   - drawDay() = draws one selected day on map
+   - renderDayBar() = builds the day buttons
+
 15. timeline rendering
+   - renderTimeline() = builds right-side day schedule
+
 16. rebuild logic
+   - rebuildPlan() = refreshes data and redraws everything
+
 17. button handlers for fit clear apply and mode
+   - btn-fit.onclick
+   - btn-clear.onclick
+   - btn-apply-days.onclick
+   - travelModeSelect.addEventListener("change", ...)
+
 18. start point placement popup and logic
+   - startMsg
+   - btn-set-start.onclick
+   - btn-clear-start.onclick
+   - map.on("click", ...)
+
 19. map page chatbot
+   - initMapChat()
+   - addBubble()
+   - bestAnswer()
+   - renderSuggestions()
+   - openChat()
+   - closeChat()
+   - send()
 
 -->
-```
