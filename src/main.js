@@ -58,10 +58,13 @@ function preloadUpcomingImages(list, startIndex, count = 6) {
 // loads the current swipe card into the page
 // if there are no more cards it shows the end card instead
 async function loadCard() {
+
   const container = document.getElementById("card-container");
+  const fixedUndo = document.getElementById("btn-undo-fixed");
   const currentPlace = filteredAttractions[currentIndex];
 
   if (!currentPlace) {
+    if (fixedUndo) fixedUndo.style.display = "none";
     container.innerHTML = `
       <div id="end-card" class="swipe-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:400px; gap:20px;">
         <div style="font-size:4rem;">🎉</div>
@@ -71,13 +74,6 @@ async function loadCard() {
       </div>
     `;
 
-    let endUndoWrap = document.getElementById("undo-wrap");
-    if (endUndoWrap) endUndoWrap.innerHTML = '<button id="btn-undo" class="btn secondary" title="Undo your last swipe and go back" style="padding:14px 28px; font-size:1.15rem;">↩️ Undo</button>';
-    const endUndo = document.getElementById("btn-undo");
-    if (endUndo) endUndo.onclick = () => undoLastSwipe();
-
-
-    // puts an undo button under the card area on the end screen
     let undoWrap = document.getElementById("undo-wrap");
     if (!undoWrap) {
       undoWrap = document.createElement("div");
