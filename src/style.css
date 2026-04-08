@@ -58,7 +58,7 @@
 
 [data-theme="light"] body{ background: var(--bg); background-image: none; color: var(--text); }
 [data-theme="light"] .topbar{ background: rgba(255,255,255,0.85); border-bottom-color: var(--border); }
-[data-theme="light"] .topbar h1{ color: var(--text); }
+[data-theme="light"] .topbar h1{ color: #1a1a2e; }
 
 [data-theme="light"] .btn{ background: #1e3a5f; color: #f8fafc; border-color: rgba(30,58,95,0.3); }
 [data-theme="light"] .btn:hover{ background: #264d7a; color: #f8fafc; }
@@ -115,9 +115,9 @@
 [data-theme="light"] .swipe-overlay.like{ color: #16a34a; border-color: #16a34a; }
 [data-theme="light"] .swipe-overlay.skip{ color: #dc2626; border-color: #dc2626; }
 
-[data-theme="light"] #btn-undo{ background: #e8ebf0; color: #1a1a2e; border-color: var(--border2); }
-[data-theme="light"] #btn-undo:hover{ background: #dce0e8; }
-[data-theme="light"] #btn-undo-fixed{ background: #e8ebf0; color: #1a1a2e; border-color: var(--border2); }
+[data-theme="light"] #btn-undo{ background: #1e3a5f; color: #f8fafc; border-color: #264d7a; }
+[data-theme="light"] #btn-undo:hover{ background: #264d7a; }
+[data-theme="light"] #btn-undo-fixed{ background: #1e3a5f; color: #f8fafc; border-color: #264d7a; }
 
 /* =========================
   reset / base setup
