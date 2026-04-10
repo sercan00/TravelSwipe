@@ -1225,7 +1225,7 @@
           doc.setTextColor(40);
         } else {
           const isPri = priorities.includes(place.id);
-          const star = isPri ? "⭐ " : "";
+          const star = isPri ? "* " : "";
           const line = `  ${i + 1 - (start ? 1 : 0)}. ${star}${place.name}  [${place.category || "Place"}]`;
           doc.text(line, 14, y);
         }
