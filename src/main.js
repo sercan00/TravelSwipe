@@ -53,7 +53,27 @@ function preloadUpcomingImages(list, startIndex, count = 6) {
   }
   return Promise.all(tasks);
 }
-
+function showSavedToast() {
+  let toast = document.getElementById("saved-toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "saved-toast";
+    toast.style.cssText = `
+      position: fixed; bottom: 110px; right: 24px;
+      background: #1e3a5f; color: #f8fafc;
+      padding: 10px 18px; border-radius: 12px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+      font-weight: 600; opacity: 0; transition: opacity 0.3s ease;
+      z-index: 9998; border: 1px solid rgba(248,250,252,0.15);
+      pointer-events: none;
+    `;
+    toast.textContent = "✓ Saved to cloud";
+    document.body.appendChild(toast);
+  }
+  toast.style.opacity = "1";
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => { toast.style.opacity = "0"; }, 2000);
+}
 
 // loads the current swipe card into the page
 // if there are no more cards it shows the end card instead
@@ -492,6 +512,7 @@ function saveItinerary() {
   if (window.TravelSwipeDB) {
     window.TravelSwipeDB.saveCurrentSession();
   }
+
 }
 
 
