@@ -513,6 +513,7 @@ function saveItinerary() {
   if (window.TravelSwipeDB) {
     window.TravelSwipeDB.saveCurrentSession();
   }
+  showSavedToast();
 }
 
 
