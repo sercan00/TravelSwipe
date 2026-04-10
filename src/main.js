@@ -67,7 +67,7 @@ function showSavedToast() {
       font-weight: 600; opacity: 0; transition: opacity 0.3s ease;
       z-index: 9998; border: 1px solid rgba(248,250,252,0.15);
       pointer-events: none;
-    `;;
+    `;
     toast.textContent = "✓ Saved to cloud";
     document.body.appendChild(toast);
   }
