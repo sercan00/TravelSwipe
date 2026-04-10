@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
       /* main map box */
       #map {
@@ -246,6 +247,7 @@
 <div class="mapbar">
   <div class="left">
     <a href="index.html">← Back</a>
+    <button id="btn-export-pdf" title="Download your itinerary as a PDF">📄 Export PDF</button>
     <button id="btn-clear" title="Removes all saved attractions and resets your itinerary">Clear Itinerary</button>
     <button id="btn-fit" title="Zooms the map to show all your saved attractions">Fit to Markers</button>
     <button id="btn-set-start" title="Click this then click anywhere on the map to set your starting point (e.g. your hotel)">Set Start</button>
