@@ -1177,6 +1177,77 @@
     }
   })();
 
+  document.getElementById("btn-export-pdf").onclick = function () {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const priorities = JSON.parse(localStorage.getItem("priorities") || "[]");
+    const mode = document.getElementById("travel-mode").value || "walking";
+    const modeLabel = mode === "driving" ? "Driving" : "Walking";
+
+    // header
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text("TravelSwipe Itinerary", 14, 20);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`City: ${selectedCity}   |   Mode: ${modeLabel}   |   Days: ${tripDays}`, 14, 30);
+    doc.text(`Generated: ${new Date().toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric" })}`, 14, 37);
+
+    doc.setDrawColor(200);
+    doc.line(14, 41, 196, 41);
+
+    let y = 50;
+
+    dayPlan.forEach((dayObj) => {
+      if (y > 260) { doc.addPage(); y = 20; }
+
+      // day heading
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(30, 58, 95);
+      doc.text(`Day ${dayObj.day}  (${dayObj.places.length} place${dayObj.places.length !== 1 ? "s" : ""})`, 14, y);
+      y += 7;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(40);
+
+      const start = loadStartPoint();
+      const ordered = getOptimizedVisitOrderFromStart(dayObj.places, start);
+
+      ordered.forEach((place, i) => {
+        if (place.id === "__start__") {
+          doc.setTextColor(22, 163, 74);
+          doc.text(`  📍 Start Point`, 14, y);
+          doc.setTextColor(40);
+        } else {
+          const isPri = priorities.includes(place.id);
+          const star = isPri ? "⭐ " : "";
+          const line = `  ${i + 1 - (start ? 1 : 0)}. ${star}${place.name}  [${place.category || "Place"}]`;
+          doc.text(line, 14, y);
+        }
+        y += 6;
+        if (y > 270) { doc.addPage(); y = 20; }
+      });
+
+      y += 4;
+      doc.setDrawColor(220);
+      doc.line(14, y, 196, y);
+      y += 8;
+    });
+
+    // footer note
+    if (y > 260) { doc.addPage(); y = 20; }
+    doc.setFontSize(9);
+    doc.setTextColor(150);
+    doc.text("Always verify opening times and local conditions before visiting.", 14, y);
+
+    doc.save(`TravelSwipe_${selectedCity.replace(/\s+/g,"_")}_Itinerary.pdf`);
+  };
+
 </script>
 
 </body>
