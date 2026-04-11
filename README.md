@@ -5,7 +5,6 @@ A swipe-based travel itinerary planner that lets users discover attractions thro
 
 - Select a city and swipe through attraction cards (right to like, left to skip)
 - Filter attractions by category (museums, parks, landmarks etc)
-- View liked places on an interactive map with walking or driving routes
 - Plan multi-day trips with automatic day grouping
 - Set a custom start point for your route
 - Mark top choices with priority stars
