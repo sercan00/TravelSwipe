@@ -68,7 +68,7 @@ function showSavedToast() {
       z-index: 9998; border: 1px solid rgba(248,250,252,0.15);
       pointer-events: none;
     `;
-    toast.textContent = "✓ Saved to cloud";
+    toast.textContent = "✓ Progress Saved";
     document.body.appendChild(toast);
   }
   toast.style.opacity = "1";
