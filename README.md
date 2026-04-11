@@ -1,6 +1,7 @@
 # TravelSwipe
 
 A swipe-based travel itinerary planner that lets users discover attractions through photo cards and generates optimised routes on an interactive map.
+
 ## What it does
 
 - Select a city and swipe through attraction cards (right to like, left to skip)
@@ -27,6 +28,28 @@ A swipe-based travel itinerary planner that lets users discover attractions thro
 3. Run using a local development server
 4. Open the localhost address in your browser
 
+## Live / hosted version
+
+GitHub repository: https://github.com/sercan00/TravelSwipe/tree/master
+
+## Folder structure
+
+TravelSwipe/
+├── index.html        # main swipe page
+├── map.html          # itinerary map page
+├── about.html        # about page
+├── style.css         # main stylesheet
+├── main.js           # swipe page logic
+├── firebase.js       # Firebase cloud storage
+├── travel-data.js    # attraction dataset
+├── README.md
+└── images/
+├── cityCovers/   # city tile background images
+├── London/
+├── NY/
+├── Tokyo/
+└── Krakow/
+
 ## Technologies used
 
 - HTML5, CSS3, JavaScript (ES6+)
@@ -45,3 +68,4 @@ A swipe-based travel itinerary planner that lets users discover attractions thro
 ## Author
 
 Sercan Emiroglu (230029009) — BSc Computer Science, City St George's, University of London (2025-2026)
+Consultant: Sebastian Prost
