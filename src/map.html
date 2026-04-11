@@ -108,7 +108,7 @@
           padding: 18px 28px !important;
       }
 
-      /* active selectd day button */
+      /* active selected day button */
       .day-btn.active{
           background:#1b2a4a;
           border-color: rgba(59,130,246,0.35);
@@ -204,7 +204,7 @@
           font-style: italic;
       }
 
-      /* total route summary atb ottom of timeline */
+      /* total route summary at bottom of timeline */
       .tl-total{
           margin-top: 16px;
           padding: 14px;
@@ -225,12 +225,16 @@
       @media (max-width: 900px){
           #timeline-panel{ display: none; }
       }
+
+      /* light mode overrides for map page */
       [data-theme="light"] .label {
-          color: #1a1a2e;
+          color: #1a1a2e !important;
+          opacity: 1;
       }
 
       [data-theme="light"] .meta {
-          color: #1a1a2e;
+          color: #1a1a2e !important;
+          opacity: 1;
       }
 
       [data-theme="light"] .mapbar a,
