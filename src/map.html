@@ -1220,9 +1220,7 @@
 
       ordered.forEach((place, i) => {
         if (place.id === "__start__") {
-          doc.setTextColor(22, 163, 74);
-          doc.text(`  📍 Start Point`, 14, y);
-          doc.setTextColor(40);
+          y -= 6;
         } else {
           const isPri = priorities.includes(place.id);
           const star = isPri ? "* " : "";
