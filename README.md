@@ -35,20 +35,22 @@ GitHub repository: https://github.com/sercan00/TravelSwipe/tree/master
 ## Folder structure
 
 TravelSwipe/
-├── index.html        # main swipe page
-├── map.html          # itinerary map page
-├── about.html        # about page
-├── style.css         # main stylesheet
-├── main.js           # swipe page logic
-├── firebase.js       # Firebase cloud storage
-├── travel-data.js    # attraction dataset
-├── README.md
-└── images/
-├── cityCovers/   # city tile background images
-├── London/
-├── NY/
-├── Tokyo/
-└── Krakow/
+└── SwipeT/
+├── src/
+│   ├── index.html
+│   ├── map.html
+│   ├── about.html
+│   ├── style.css
+│   ├── main.js
+│   ├── firebase.js
+│   ├── travel-data.js
+│   └── images/
+│       ├── cityCovers/
+│       ├── London/
+│       ├── NY/
+│       ├── Tokyo/
+│       └── Krakow/
+└── README.md
 
 ## Technologies used
 
